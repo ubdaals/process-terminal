@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stockbee Process Terminal v2.5</title>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-purple: #8b5cf6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-primary); padding: 16px; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
+        .title { font-size: 1.15rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; }
+        .badge { background: #1e3a8a; color: #93c5fd; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .card-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .metric-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; text-align: center; }
+        .metric-val { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+        .metric-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; }
+        
+        .posture-btn { padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: #1f2937; color: var(--text-primary); font-weight: 600; cursor: pointer; text-align: center; width: 100%; transition: all 0.2s; font-size: 0.8rem; }
+        .posture-btn.active-yes { background: #065f46; border-color: var(--accent-green); color: #a7f3d0; }
+        .posture-btn.active-sel { background: #78350f; border-color: var(--accent-yellow); color: #fde68a; }
+        .posture-btn.active-no { background: #7f1d1d; border-color: var(--accent-red); color: #fecaca; }
+        
+        .alert-banner { padding: 10px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; text-align: center; margin-bottom: 12px; border: 1px solid transparent; }
+        
+        label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
+        input, select, textarea { width: 100%; background: #1f2937; border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; }
+        input:focus, select:focus { outline: none; border-color: var(--accent-blue); }
+        
+        .btn { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-success { background: var(--accent-green); color: white; margin-top: 8px; }
+        .btn-secondary { background: #374151; color: var(--text-primary); margin-bottom: 8px; }
+        .btn-danger { background: #7f1d1d; color: white; padding: 4px 8px; font-size: 0.75rem; width: auto; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-close-trade { background: #1e3a8a; color: #93c5fd; padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--accent-blue); cursor: pointer; }
+        
+        .checkbox-group { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+        .checkbox-item { display: flex; align-items: flex-start; gap: 8px; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; }
+        .checkbox-item input { width: auto; margin: 3px 0 0 0; }
+        
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th { color: var(--text-secondary); font-weight: 600; background: rgba(255,255,255,0.02); }
+        .tag-pass { color: var(--accent-green); font-weight: bold; }
+        .tag-fail { color: var(--accent-red); font-weight: bold; }
+        .tag-open { color: var(--accent-yellow); font-weight: bold; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); padding: 16px; overflow-y: auto; z-index: 100; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 600px; margin: 20px auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        
+        .rule-list { list-style: none; counter-reset: rule-counter; }
+        .rule-list li { counter-increment: rule-counter; margin-bottom: 10px; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+        .rule-list li::before { content: counter(rule-counter) ". "; font-weight: bold; color: var(--accent-blue); }
+
+        .target-pill { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.75rem; text-align: center; }
+        .target-pill strong { color: var(--accent-green); display: block; font-size: 0.9rem; }
+        
+        @media (max-width: 600px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title">
+            <span>STOCKBEE</span>
+            <span class="badge">PROCESS TERMINAL v2.5</span>
+        </div>
+        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px;" onclick="toggleModal(true)">Stockbee Sizing & Selling Rules</button>
+    </div>
+
+    <!-- RISK & STREAK HUD -->
+    <div class="card">
+        <div class="card-title">
+            <span>Risk HUD & Process Streak</span>
+            <span id="hudRiskPct" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: none;">Baseline Risk: $60.00 (0.50% Equity)</span>
+        </div>
+        <div class="grid-3">
+            <div class="metric-box">
+                <div class="metric-label">Account Equity ($)</div>
+                <input type="number" id="sizerEquity" value="12000" step="500" oninput="handleInputSave(); calculateSize();" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem;">
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Unlocked Base Tier</div>
+                <div class="metric-val" id="hudTier">Tier 3 ($60)</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">10-Trade Streak</div>
+                <div class="metric-val" id="hudStreak" style="color: var(--accent-yellow)">0 / 10</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SITUATIONAL AWARENESS (MTRT) -->
+    <div class="card">
+        <div class="card-title">Situational Awareness (Pre-Market Posture)</div>
+        <div class="grid-3">
+            <button id="postureYes" class="posture-btn" onclick="setPosture('YES')">🟢 Breakouts Work (YES)</button>
+            <button id="postureSel" class="posture-btn" onclick="setPosture('SELECTIVE')">🟡 Selective (HALF SIZE)</button>
+            <button id="postureNo" class="posture-btn" onclick="setPosture('NO')">🔴 Breakouts Fail (NO)</button>
+        </div>
+    </div>
+
+    <!-- INSTANT POSITION SIZER -->
+    <div class="card">
+        <div class="card-title">Automated Position Sizer & Conviction Engine</div>
+        
+        <!-- DYNAMIC AUTO-RISK BANNER -->
+        <div id="riskBanner" class="alert-banner" style="background: rgba(59, 130, 246, 0.1); border-color: var(--accent-blue); color: var(--accent-blue);">
+            ACTIVE BASE RISK: $60.00 (0.50% Account Risk - TIER 3)
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Setup Conviction & Sizing Mode</label>
+                <select id="sizerConviction" onchange="calculateSize(); handleInputSave();">
+                    <option value="1x">Standard Single (1x Baseline Risk)</option>
+                    <option value="2x" selected>⚡ Home Run EP / Catalyst (2x Heavy Conviction Risk)</option>
+                </select>
+            </div>
+            <div>
+                <label>Target Setup Category</label>
+                <select id="tradeSetup" onchange="handleInputSave(); syncConvictionWithSetup(); calculateSize();">
+                    <optgroup label="Home Runs (20%++ Magnitude)">
+                        <option value="Episodic Pivot (EP)" selected>Episodic Pivot (EP)</option>
+                        <option value="EP-9M (Volume Confirmed)">EP-9M (Volume Confirmed)</option>
+                        <option value="Delayed EP (DEP)">Delayed EP (DEP)</option>
+                    </optgroup>
+                    <optgroup label="Singles (0.5% - 5% Pay the Bills)">
+                        <option value="Momentum Burst (MB)">Momentum Burst (MB)</option>
+                        <option value="Continuation (2LYNCH)">Continuation (2LYNCH)</option>
+                        <option value="Consolidation Breakout">Consolidation Breakout</option>
+                        <option value="Anticipation (TT/TTT)">Anticipation (TT/TTT)</option>
+                        <option value="Reversal Bullish">Reversal Bullish</option>
+                        <option value="Bottom Bounce">Bottom Bounce</option>
+                        <option value="Weak Structure Short (NIAGRA3)">Weak Structure Short (NIAGRA3)</option>
+                    </optgroup>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Entry Price ($)</label>
+                <input type="number" id="sizerEntry" placeholder="e.g. 100.00" step="0.01" oninput="handleInputSave(); calculateSize();">
+            </div>
+            <div>
+                <label>Technical Stop Loss Price ($)</label>
+                <input type="number" id="sizerStop" placeholder="e.g. 98.00" step="0.01" oninput="handleInputSave(); calculateSize();">
+            </div>
+        </div>
+
+        <div class="metric-box" style="background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); padding: 14px;">
+            <div class="metric-label">Calculated Share Size</div>
+            <div class="metric-val" id="sizerShares" style="color: var(--accent-blue); font-size: 1.4rem;">0 Shares</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" id="sizerDetails">
+                Value: $0.00 | Stop: 0.00% | Exposure: 0.0% Equity | Risk: $0.00 (0.00%)
+            </div>
+        </div>
+
+        <!-- STOCKBEE SELLING INTO STRENGTH TARGETS -->
+        <div style="margin-top: 14px;">
+            <label style="margin-bottom: 6px; font-weight: bold; color: var(--accent-blue);">Stockbee Selling Into Strength Framework:</label>
+            <div class="grid-3">
+                <div class="target-pill" id="target1R">
+                    <span>Target 1 (+1R Scale 1/3)</span>
+                    <strong>$0.00</strong>
+                    <small style="color:var(--text-secondary)">Lock gain / Stop to BE</small>
+                </div>
+                <div class="target-pill" id="target2R">
+                    <span>Target 2 (Day 3-5 Push)</span>
+                    <strong>$0.00</strong>
+                    <small style="color:var(--text-secondary)">Scale 1/2 into strength</small>
+                </div>
+                <div class="target-pill" id="target3R">
+                    <span>Target 3 (Runner / EP)</span>
+                    <strong>$0.00</strong>
+                    <small style="color:var(--text-secondary)">Trail w/ 10 EMA / Low of Day</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAILY TRADE LOG & AUDIT -->
+    <div class="card">
+        <div class="card-title">Daily Trade Log & Execution Audit</div>
+        
+        <div class="grid-2">
+            <div>
+                <label>Ticker</label>
+                <input type="text" id="tradeTicker" placeholder="e.g. NVDA" style="text-transform: uppercase" oninput="handleInputSave()">
+            </div>
+            <div>
+                <label>Executed Shares</label>
+                <input type="number" id="tradeShares" placeholder="0" oninput="handleInputSave()">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Executed Entry ($)</label>
+                <input type="number" id="tradeEntry" placeholder="0.00" step="0.01" oninput="handleInputSave()">
+            </div>
+            <div>
+                <label>Executed Stop ($)</label>
+                <input type="number" id="tradeStop" placeholder="0.00" step="0.01" oninput="handleInputSave()">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Exit Price ($) <span style="color: var(--text-secondary); font-weight: normal;">(Leave blank for Open Swing)</span></label>
+                <input type="number" id="tradeExit" placeholder="Blank if active holding" step="0.01" oninput="handleInputSave()">
+            </div>
+            <div>
+                <label>Market Regime SA Summary</label>
+                <input type="text" id="tradeMarketNote" placeholder="e.g. Ratios > 1.0, 4%+ count 180 up" oninput="handleInputSave()">
+            </div>
+        </div>
+
+        <div class="card-title" style="margin-top: 12px; font-size: 0.8rem;">Zero-Leeway 3-Point Process Audit</div>
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" id="audit1">
+                <span>1. Setup strictly met Stockbee Playbook v2 entry criteria (tight base, catalyst, volume surge, or clear pivot)?</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="audit2">
+                <span>2. Share count was pre-calculated based on exact stop distance before hitting buy?</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="audit3">
+                <span>3. Stop loss was honored without moving it, widening it, or doubling down on a loser?</span>
+            </label>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveTrade()">Log Trade & Save Session</button>
+    </div>
+
+    <!-- GEMINI GENERATOR OUTPUT -->
+    <div class="card">
+        <div class="card-title">Gemini Daily Update Generator</div>
+        <button class="btn btn-success" onclick="generateGeminiUpdate()">Generate Gemini Review Text</button>
+        <textarea id="geminiOutput" rows="8" readonly style="margin-top: 12px; font-family: monospace; font-size: 0.75rem;" placeholder="Click button above to generate session review..."></textarea>
+        <button class="btn btn-secondary" onclick="copyGeminiText()">Copy Text to Clipboard</button>
+    </div>
+
+    <!-- PERSISTENT TRADE HISTORY TABLE -->
+    <div class="card">
+        <div class="card-title">
+            <span>Trade History Log</span>
+            <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;" onclick="exportData()">Backup Data</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;" onclick="importData()">Restore Data</button>
+                <button class="btn btn-danger" onclick="clearHistory()">Clear History</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ticker</th>
+                        <th>Setup</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>Result</th>
+                        <th>Audit</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PRE-MARKET DRILL MODAL -->
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Stockbee Heavy Sizing & Selling Rules</h3>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px;" onclick="toggleModal(false)">X</button>
+            </div>
+            
+            <h4 style="color:var(--accent-purple); margin-bottom:8px;">Stockbee EP Heavy Sizing Philosophy</h4>
+            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary);">
+                <li><strong style="color:var(--text-primary)">2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk ($60) to 2x risk ($120) on true Episodic Pivots with strong catalysts.</li>
+                <li><strong style="color:var(--text-primary)">Intraday ORB Entries (Tight Stops):</strong> EPs entered on 1-min / 5-min ORB high breakout allow 0.5%–1.5% stop distance, driving position exposure to 33%–100% of portfolio value.</li>
+                <li><strong style="color:var(--text-primary)">Institutional Backing:</strong> Catalysts attract long-term fund buyers, reducing immediate failure rates and enabling aggressive capital concentration.</li>
+            </ul>
+
+            <h4 style="color:var(--accent-blue); margin-bottom:8px;">Stockbee Selling Rules (Selling Into Strength)</h4>
+            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary);">
+                <li><strong style="color:var(--text-primary)">3-5 Day Rule:</strong> Most breakouts run for 3 to 5 days before pulling back. Sell 1/3 to 1/2 of your position into strength on Days 3–5.</li>
+                <li><strong style="color:var(--text-primary)">Pay Yourself First:</strong> Lock in partial profits at +1R to +2R to bring your effective risk on the trade to zero.</li>
+                <li><strong style="color:var(--text-primary)">EP Runner Rule:</strong> For Episodic Pivots, trail the remaining piece using the 10 EMA or Previous Day's Low to capture 20%–50%+ home run moves.</li>
+            </ul>
+
+            <h4 style="color:var(--accent-blue); margin-bottom:8px;">12 Always Rules</h4>
+            <ol class="rule-list">
+                <li>Always trade for magnitude, not duration.</li>
+                <li>Always operate with Situational Awareness.</li>
+                <li>Always buy on the first day of breakout — earlier the better.</li>
+                <li>Always look for tightness or a negative day in the pre-breakout.</li>
+                <li>Always look for young setups and moves.</li>
+                <li>Always look for a catalyst.</li>
+                <li>Always think: "who is going to buy after me, and whom can I sell this to?"</li>
+                <li>Always sell into strength and move stops to protect profits.</li>
+                <li>Always look for the opportunity to size up on fund-quality plays.</li>
+                <li>Always develop new edges and variations — build a larger playbook.</li>
+                <li>Always study 20% and 50% moves.</li>
+                <li>Edge turnaround and rotation — edges decay; be ready to rotate to what's working now.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let appState = {
+            streak: 0,
+            tier: 'Tier 3 ($60)',
+            posture: 'YES',
+            inputs: {},
+            history: []
+        };
+
+        function init() {
+            const saved = localStorage.getItem('stockbee_terminal_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState.streak = typeof parsed.streak === 'number' ? parsed.streak : 0;
+                    appState.tier = getTierNameFromStreak(appState.streak);
+                    appState.posture = parsed.posture || 'YES';
+                    appState.inputs = parsed.inputs || {};
+                    appState.history = Array.isArray(parsed.history) ? parsed.history : [];
+                } catch(e) {
+                    console.error("Failed to parse saved state", e);
+                }
+            }
+
+            if (appState.inputs) {
+                for (const key in appState.inputs) {
+                    const el = document.getElementById(key);
+                    if (el) el.value = appState.inputs[key];
+                }
+            }
+
+            updateHUD();
+            setPosture(appState.posture || 'YES');
+            syncConvictionWithSetup();
+            renderHistory();
+        }
+
+        function handleInputSave() {
+            appState.inputs = {
+                sizerEquity: document.getElementById('sizerEquity').value,
+                sizerConviction: document.getElementById('sizerConviction').value,
+                sizerEntry: document.getElementById('sizerEntry').value,
+                sizerStop: document.getElementById('sizerStop').value,
+                tradeTicker: document.getElementById('tradeTicker').value,
+                tradeSetup: document.getElementById('tradeSetup').value,
+                tradeEntry: document.getElementById('tradeEntry').value,
+                tradeStop: document.getElementById('tradeStop').value,
+                tradeShares: document.getElementById('tradeShares').value,
+                tradeExit: document.getElementById('tradeExit').value,
+                tradeMarketNote: document.getElementById('tradeMarketNote').value
+            };
+            saveState();
+        }
+
+        function syncConvictionWithSetup() {
+            const setup = document.getElementById('tradeSetup').value;
+            const convictionSel = document.getElementById('sizerConviction');
+            if (setup.includes("EP")) {
+                convictionSel.value = "2x";
+            } else {
+                convictionSel.value = "1x";
+            }
+        }
+
+        function getBaseRiskFromStreak(streak) {
+            if (streak >= 10) return 120;
+            if (streak >= 5) return 90;
+            return 60;
+        }
+
+        function getTierNameFromStreak(streak) {
+            const risk = getBaseRiskFromStreak(streak);
+            if (streak >= 10) return `Tier 1 ($${risk})`;
+            if (streak >= 5) return `Tier 2 ($${risk})`;
+            return `Tier 3 ($${risk})`;
+        }
+
+        function getEffectiveRisk() {
+            const baseRisk = getBaseRiskFromStreak(appState.streak);
+            const convictionMult = document.getElementById('sizerConviction') ? (document.getElementById('sizerConviction').value === '2x' ? 2 : 1) : 1;
+            let risk = baseRisk * convictionMult;
+
+            if (appState.posture === 'SELECTIVE') return risk * 0.5;
+            if (appState.posture === 'NO') return 0;
+            return risk;
+        }
+
+        function saveState() {
+            localStorage.setItem('stockbee_terminal_state', JSON.stringify(appState));
+        }
+
+        function updateHUD() {
+            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
+            const baseRisk = getBaseRiskFromStreak(appState.streak);
+            const baseRiskPct = equity > 0 ? ((baseRisk / equity) * 100).toFixed(2) : "0.00";
+
+            document.getElementById('hudStreak').innerText = appState.streak + " / 10";
+            document.getElementById('hudTier').innerText = appState.tier || "Tier 3 ($60)";
+            document.getElementById('hudRiskPct').innerText = `Baseline Risk: $${baseRisk.toFixed(2)} (${baseRiskPct}% Equity)`;
+        }
+
+        function setPosture(posture) {
+            appState.posture = posture;
+            document.getElementById('postureYes').className = 'posture-btn' + (posture === 'YES' ? ' active-yes' : '');
+            document.getElementById('postureSel').className = 'posture-btn' + (posture === 'SELECTIVE' ? ' active-sel' : '');
+            document.getElementById('postureNo').className = 'posture-btn' + (posture === 'NO' ? ' active-no' : '');
+            
+            updateHUD();
+            calculateSize();
+            saveState();
+        }
+
+        function calculateSize() {
+            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
+            const entry = parseFloat(document.getElementById('sizerEntry').value) || 0;
+            const stop = parseFloat(document.getElementById('sizerStop').value) || 0;
+            const convictionMode = document.getElementById('sizerConviction').value;
+            const is2x = convictionMode === '2x';
+            
+            const effectiveRisk = getEffectiveRisk();
+            const accountRiskPct = equity > 0 ? ((effectiveRisk / equity) * 100).toFixed(2) : "0.00";
+
+            const banner = document.getElementById('riskBanner');
+            if (appState.posture === 'NO') {
+                banner.style.background = 'rgba(239, 68, 68, 0.2)';
+                banner.style.color = 'var(--accent-red)';
+                banner.style.borderColor = 'var(--accent-red)';
+                banner.innerText = 'TRADING LOCKED: Market Posture is NO. Stand aside.';
+            } else if (appState.posture === 'SELECTIVE') {
+                banner.style.background = 'rgba(245, 158, 11, 0.15)';
+                banner.style.color = 'var(--accent-yellow)';
+                banner.style.borderColor = 'var(--accent-yellow)';
+                banner.innerText = `ACTIVE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Account Risk - HALF SIZE POSTURE)`;
+            } else {
+                if (is2x) {
+                    banner.style.background = 'rgba(139, 92, 246, 0.2)';
+                    banner.style.color = 'var(--accent-purple)';
+                    banner.style.borderColor = 'var(--accent-purple)';
+                    banner.innerText = `⚡ HEAVY CONVICTION RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Account Risk - 2x EP MODE)`;
+                } else {
+                    banner.style.background = 'rgba(59, 130, 246, 0.1)';
+                    banner.style.color = 'var(--accent-blue)';
+                    banner.style.borderColor = 'var(--accent-blue)';
+                    banner.innerText = `ACTIVE BASE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Account Risk - STANDARD SINGLE)`;
+                }
+            }
+
+            if (entry > 0 && stop > 0 && entry > stop && effectiveRisk > 0) {
+                const stopDist = entry - stop;
+                const shares = Math.floor(effectiveRisk / stopDist);
+                const posValue = shares * entry;
+                const stopPct = ((stopDist / entry) * 100).toFixed(2);
+                const exposurePct = ((posValue / equity) * 100).toFixed(1);
+
+                let allocationTag = "";
+                if (exposurePct >= 33) {
+                    allocationTag = " 🔥 STOCKBEE HEAVY CONCENTRATION (>33% Position)";
+                } else if (exposurePct >= 20) {
+                    allocationTag = " ⚡ MODERATE CONCENTRATION (20%-33% Position)";
+                }
+
+                document.getElementById('sizerShares').innerText = shares + " Shares";
+                document.getElementById('sizerDetails').innerText = `Value: $${posValue.toFixed(2)} | Stop: ${stopPct}% | Exposure: ${exposurePct}% Equity${allocationTag} | Risk: $${effectiveRisk.toFixed(2)} (${accountRiskPct}%)`;
+
+                document.getElementById('target1R').querySelector('strong').innerText = `$${(entry + stopDist).toFixed(2)}`;
+                document.getElementById('target2R').querySelector('strong').innerText = `$${(entry + (stopDist * 2)).toFixed(2)}`;
+                document.getElementById('target3R').querySelector('strong').innerText = `$${(entry + (stopDist * 3)).toFixed(2)}`;
+            } else {
+                document.getElementById('sizerShares').innerText = "0 Shares";
+                document.getElementById('sizerDetails').innerText = "Value: $0.00 | Stop: 0.00% | Exposure: 0.0% Equity | Risk: $0.00 (0.00%)";
+                document.getElementById('target1R').querySelector('strong').innerText = "$0.00";
+                document.getElementById('target2R').querySelector('strong').innerText = "$0.00";
+                document.getElementById('target3R').querySelector('strong').innerText = "$0.00";
+            }
+
+            updateHUD();
+        }
+
+        function saveTrade() {
+            const ticker = document.getElementById('tradeTicker').value.toUpperCase() || "N/A";
+            const setup = document.getElementById('tradeSetup').value;
+            const entry = parseFloat(document.getElementById('tradeEntry').value) || 0;
+            const stop = parseFloat(document.getElementById('tradeStop').value) || 0;
+            const shares = parseInt(document.getElementById('tradeShares').value) || 0;
+            const exitVal = document.getElementById('tradeExit').value;
+            const exit = parseFloat(exitVal);
+
+            const isClosed = !isNaN(exit) && exit > 0;
+
+            const audit1 = document.getElementById('audit1').checked;
+            const audit2 = document.getElementById('audit2').checked;
+            const audit3 = document.getElementById('audit3').checked;
+            const passAudit = audit1 && audit2 && audit3;
+
+            let rMultStr = "OPEN";
+            if (isClosed && entry > 0 && stop > 0 && entry !== stop) {
+                const rMult = ((exit - entry) / Math.abs(entry - stop)).toFixed(2);
+                rMultStr = (rMult >= 0 ? '+' : '') + rMult + 'R';
+            }
+
+            if (passAudit) {
+                appState.streak += 1;
+                appState.tier = getTierNameFromStreak(appState.streak);
+            } else {
+                appState.streak = 0;
+                appState.tier = "Tier 3 ($60)";
+                alert("Process Audit Failed! Streak reset to Day 0. Active risk forced back to Tier 3 ($60).");
+            }
+
+            const tradeRecord = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString(),
+                ticker,
+                setup,
+                entry,
+                stop,
+                shares,
+                exit: isClosed ? exit : null,
+                rMult: rMultStr,
+                status: isClosed ? 'CLOSED' : 'OPEN',
+                passAudit
+            };
+
+            appState.history.unshift(tradeRecord);
+
+            // Clear input fields after logging
+            document.getElementById('tradeTicker').value = '';
+            document.getElementById('tradeEntry').value = '';
+            document.getElementById('tradeStop').value = '';
+            document.getElementById('tradeShares').value = '';
+            document.getElementById('tradeExit').value = '';
+            document.getElementById('audit1').checked = false;
+            document.getElementById('audit2').checked = false;
+            document.getElementById('audit3').checked = false;
+
+            handleInputSave();
+            saveState();
+            updateHUD();
+            renderHistory();
+            calculateSize();
+        }
+
+        function closeTrade(id) {
+            const trade = appState.history.find(t => t.id === id);
+            if (!trade) return;
+            const exitPriceStr = prompt(`Enter Exit Price ($) for ${trade.ticker}:`, trade.entry);
+            if (exitPriceStr === null) return;
+            const exitPrice = parseFloat(exitPriceStr);
+            if (isNaN(exitPrice) || exitPrice <= 0) {
+                alert("Invalid exit price.");
+                return;
+            }
+
+            trade.exit = exitPrice;
+            trade.status = 'CLOSED';
+            if (trade.entry > 0 && trade.stop > 0 && trade.entry !== trade.stop) {
+                const rMult = ((exitPrice - trade.entry) / Math.abs(trade.entry - trade.stop)).toFixed(2);
+                trade.rMult = (rMult >= 0 ? '+' : '') + rMult + 'R';
+            } else {
+                trade.rMult = 'FLAT';
+            }
+
+            saveState();
+            renderHistory();
+        }
+
+        function deleteTrade(id) {
+            if (confirm("Delete this trade record?")) {
+                appState.history = appState.history.filter(t => t.id !== id);
+                saveState();
+                renderHistory();
+            }
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            if (!tbody) return;
+
+            if (!appState.history || appState.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = appState.history.map(t => {
+                const auditTag = t.passAudit 
+                    ? '<span class="tag-pass">PASS</span>' 
+                    : '<span class="tag-fail">FAIL</span>';
+                
+                let resultTag = '<span class="tag-open">OPEN</span>';
+                if (t.status === 'CLOSED') {
+                    const isWin = t.rMult.startsWith('+');
+                    resultTag = `<span style="color: ${isWin ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: bold;">${t.rMult}</span>`;
+                }
+
+                const actionBtn = t.status === 'OPEN'
+                    ? `<button class="btn-close-trade" onclick="closeTrade(${t.id})">Close</button> <button class="btn-danger" onclick="deleteTrade(${t.id})">✕</button>`
+                    : `<button class="btn-danger" onclick="deleteTrade(${t.id})">✕</button>`;
+
+                return `<tr>
+                    <td>${t.date}</td>
+                    <td><strong>${t.ticker}</strong></td>
+                    <td>${t.setup}</td>
+                    <td>$${t.entry.toFixed(2)}</td>
+                    <td>${t.exit ? '$' + t.exit.toFixed(2) : '-'}</td>
+                    <td>${resultTag}</td>
+                    <td>${auditTag}</td>
+                    <td>${actionBtn}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('rulesModal');
+            if (modal) modal.style.display = show ? 'block' : 'none';
+        }
+
+        function generateGeminiUpdate() {
+            const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            const equity = document.getElementById('sizerEquity').value || '12000';
+            const baseRisk = getBaseRiskFromStreak(appState.streak);
+
+            let text = `=== STOCKBEE DAILY PROCESS AUDIT (${dateStr}) ===\n`;
+            text += `• Account Equity: $${parseFloat(equity).toLocaleString()}\n`;
+            text += `• Market Posture: ${appState.posture}\n`;
+            text += `• Streak Status: ${appState.streak} / 10 Consecutive Validated Trades\n`;
+            text += `• Active Risk Tier: ${appState.tier} ($${baseRisk} / trade)\n\n`;
+
+            text += `--- TODAY'S TRADES (${appState.history.length} Total Logged) ---\n`;
+            if (appState.history.length === 0) {
+                text += `No trades executed today. Strict adherence to posture / setup filters.\n`;
+            } else {
+                appState.history.forEach((t, i) => {
+                    text += `${i+1}. $${t.ticker} (${t.setup}) | Entry: $${t.entry} | Exit: ${t.exit ? '$' + t.exit : 'OPEN'} | R-Mult: ${t.rMult} | Audit: ${t.passAudit ? 'PASSED' : 'FAILED'}\n`;
+                });
+            }
+
+            text += `\n--- KEY PROCESS OBSERVATIONS ---\n`;
+            const note = document.getElementById('tradeMarketNote').value;
+            text += `• Market/SA Note: ${note || 'N/A'}\n`;
+            text += `• Process Compliance: ${appState.history.every(t => t.passAudit) ? '100% Rule Compliance' : 'Rule Violation Detected'}\n`;
+
+            document.getElementById('geminiOutput').value = text;
+        }
+
+        function copyGeminiText() {
+            const textarea = document.getElementById('geminiOutput');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Gemini Review Text copied to clipboard!');
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `stockbee_terminal_backup_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData() {
+            const jsonStr = prompt("Paste your backup JSON data here:");
+            if (!jsonStr) return;
+            try {
+                const parsed = JSON.parse(jsonStr);
+                appState = parsed;
+                saveState();
+                init();
+                alert("Data successfully restored!");
+            } catch(e) {
+                alert("Invalid JSON format.");
+            }
+        }
+
+        function clearHistory() {
+            if (confirm("Are you sure you want to clear all trade history? This cannot be undone.")) {
+                appState.history = [];
+                saveState();
+                renderHistory();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
