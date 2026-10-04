@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stockbee Process Terminal v2.7</title>
+    <title>Stockbee Process Terminal v2.7.1</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -61,7 +61,7 @@
         .tag-open { color: var(--accent-yellow); font-weight: bold; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); padding: 16px; overflow-y: auto; z-index: 100; }
-        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 600px; margin: 20px auto; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 650px; margin: 20px auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
         
         .target-pill { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.75rem; text-align: center; }
@@ -77,7 +77,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v2.7</span>
+            <span class="badge">PROCESS TERMINAL v2.7.1</span>
         </div>
         <button class="btn btn-secondary" style="width: auto; padding: 6px 12px;" onclick="toggleModal(true)">Rules & Sizing Manual</button>
     </div>
@@ -314,19 +314,51 @@
     <div id="rulesModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Earned Sizing & Rules Manual</h3>
+                <h3 style="color:var(--accent-blue);">Stockbee Heavy Sizing & Selling Rules</h3>
                 <button class="btn btn-secondary" style="width: auto; padding: 4px 8px;" onclick="toggleModal(false)">X</button>
             </div>
             
+            <h4 style="color:var(--accent-purple); margin-bottom:8px;">Stockbee EP Heavy Sizing Philosophy</h4>
+            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
+                <li><strong style="color:var(--text-primary)">2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk ($60) to 2x risk ($120) on true Episodic Pivots with strong catalysts.</li>
+                <li><strong style="color:var(--text-primary)">Intraday ORB Entries (Tight Stops):</strong> EPs entered on 1-min / 5-min ORB high breakout allow 0.5%–1.5% stop distance, driving position exposure to 33%–100% of portfolio value.</li>
+                <li><strong style="color:var(--text-primary)">Institutional Backing:</strong> Catalysts attract long-term fund buyers, reducing immediate failure rates and enabling aggressive capital concentration.</li>
+            </ul>
+
+            <h4 style="color:var(--accent-blue); margin-bottom:8px;">Stockbee Selling Rules (Selling Into Strength)</h4>
+            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
+                <li><strong style="color:var(--text-primary)">3-5 Day Rule:</strong> Most breakouts run for 3 to 5 days before pulling back. Sell 1/3 to 1/2 of your position into strength on Days 3–5.</li>
+                <li><strong style="color:var(--text-primary)">Pay Yourself First:</strong> Lock in partial profits at +1R to +2R to bring your effective risk on the trade to zero.</li>
+                <li><strong style="color:var(--text-primary)">EP Runner Rule:</strong> For Episodic Pivots, trail the remaining piece using the 10 EMA or Previous Day's Low to capture 20%–50%+ home run moves.</li>
+            </ul>
+
+            <h4 style="color:var(--accent-yellow); margin-bottom:8px;">12 Always Rules</h4>
+            <ol style="font-size:0.8rem; margin-bottom:16px; padding-left:20px; color:var(--text-secondary); line-height: 1.6;">
+                <li>Always trade for magnitude, not duration.</li>
+                <li>Always operate with Situational Awareness.</li>
+                <li>Always buy on the first day of breakout — earlier the better.</li>
+                <li>Always look for tightness or a negative day in the pre-breakout.</li>
+                <li>Always look for young setups and moves.</li>
+                <li>Always look for a catalyst.</li>
+                <li>Always think: "who is going to buy after me, and whom can I sell this to?"</li>
+                <li>Always sell into strength and move stops to protect profits.</li>
+                <li>Always look for the opportunity to size up on fund-quality plays.</li>
+                <li>Always develop new edges and variations — build a larger playbook.</li>
+                <li>Always study 20% and 50% moves.</li>
+                <li>Edge turnaround and rotation — edges decay; be ready to rotate to what's working now.</li>
+            </ol>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
             <h4 style="color:var(--accent-green); margin-bottom:8px;">Earned Sizing Framework</h4>
-            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary);">
+            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
                 <li><strong style="color:var(--text-primary)">Tier 3 (0-4 Streak):</strong> Fixed $60 risk mode recommended. Rebuild discipline without dollar anxiety.</li>
                 <li><strong style="color:var(--text-primary)">Tier 2 (5-9 Streak):</strong> Unlocks 0.50% Dynamic Equity Sizing. Earned position scaling.</li>
                 <li><strong style="color:var(--text-primary)">Tier 1 (10+ Streak):</strong> Unlocks 1.00% Full Geometric Compounding Mode.</li>
             </ul>
 
             <h4 style="color:var(--accent-purple); margin-bottom:8px;">Zero-Leeway 4-Point Audit</h4>
-            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary);">
+            <ul style="font-size:0.8rem; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
                 <li>1. Situational Awareness / Posture Aligned</li>
                 <li>2. Playbook Setup Quality Met</li>
                 <li>3. Share Count Pre-Calculated</li>
