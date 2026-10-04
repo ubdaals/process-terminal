@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stockbee Process Terminal v2.7.2</title>
+    <title>Stockbee Process Terminal v2.7.1</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -77,7 +77,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v2.7.2</span>
+            <span class="badge">PROCESS TERMINAL v2.7.1</span>
         </div>
         <button class="btn btn-secondary" style="width: auto; padding: 6px 12px;" onclick="toggleModal(true)">Rules & Sizing Manual</button>
     </div>
@@ -86,16 +86,16 @@
     <div class="card">
         <div class="card-title">
             <span>Risk HUD & Process Streak</span>
-            <span id="hudRiskPct" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: none;">Base Risk: $60.00 (0.50% Equity)</span>
+            <span id="hudRiskPct" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: none;">Baseline Risk: $60.00 (0.50% Equity)</span>
         </div>
         <div class="grid-3">
             <div class="metric-box">
                 <div class="metric-label">Account Equity ($)</div>
-                <input type="number" id="sizerEquity" value="12335" step="100" oninput="handleInputSave(); calculateSize();" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem;">
+                <input type="number" id="sizerEquity" value="12000" step="500" oninput="handleInputSave(); calculateSize();" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem;">
             </div>
             <div class="metric-box">
                 <div class="metric-label">Unlocked Base Tier</div>
-                <div class="metric-val" id="hudTier">Tier 3 (0.50%)</div>
+                <div class="metric-val" id="hudTier">Tier 3 ($60)</div>
             </div>
             <div class="metric-box">
                 <div class="metric-label">10-Trade Streak</div>
@@ -114,25 +114,34 @@
         </div>
     </div>
 
-    <!-- AUTOMATED POSITION SIZER -->
+    <!-- EARNED SIZING RECOMMENDATION ENGINE & SIZER -->
     <div class="card">
-        <div class="card-title">Automated Position Sizer Engine</div>
+        <div class="card-title">Automated Position Sizer & Earned Sizing Engine</div>
         
         <div id="earnedRecommendation" class="alert-banner" style="background: rgba(245, 158, 11, 0.12); border-color: var(--accent-yellow); color: var(--accent-yellow); text-align: left;">
             🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br>
-            <span style="font-weight:normal; font-size:0.75rem;">Active Base Risk: <strong>0.50% Equity</strong>. Build a clean 5-trade audit streak to unlock Tier 2 (0.75% Equity).</span>
+            <span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>Fixed $60 Dollar Risk</strong>. Build a clean 5-trade audit streak to unlock dynamic % equity compounding.</span>
         </div>
 
-        <div style="margin-bottom: 12px;">
-            <label>Setup Conviction & Sizing Mode</label>
-            <select id="sizerConviction" onchange="calculateSize(); handleInputSave();">
-                <option value="1x" selected>Standard Single (1x Risk)</option>
-                <option value="2x">⚡ Home Run EP / Catalyst (2x Heavy Risk)</option>
-            </select>
+        <div class="grid-2">
+            <div>
+                <label style="font-weight: bold; color: var(--accent-blue);">Sizing Model & Calculation Engine</label>
+                <select id="sizerRiskMode" onchange="handleInputSave(); calculateSize();">
+                    <option value="FIXED" selected>Fixed Dollar Tiers ($60 / $90 / $120)</option>
+                    <option value="DYNAMIC">Dynamic % Equity Sizing (Earned % based on Streak)</option>
+                </select>
+            </div>
+            <div>
+                <label>Setup Conviction & Sizing Mode</label>
+                <select id="sizerConviction" onchange="calculateSize(); handleInputSave();">
+                    <option value="1x">Standard Single (1x Risk)</option>
+                    <option value="2x" selected>⚡ Home Run EP / Catalyst (2x Heavy Risk)</option>
+                </select>
+            </div>
         </div>
 
         <div id="riskBanner" class="alert-banner" style="background: rgba(59, 130, 246, 0.1); border-color: var(--accent-blue); color: var(--accent-blue);">
-            ACTIVE BASE RISK: $61.68 (0.50% Risk)
+            ACTIVE BASE RISK: $60.00 (0.50% Account Risk - TIER 3)
         </div>
 
         <div class="grid-2">
@@ -311,7 +320,7 @@
             
             <h4 style="color:var(--accent-purple); margin-bottom:8px;">Stockbee EP Heavy Sizing Philosophy</h4>
             <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li><strong style="color:var(--text-primary)">2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk to 2x risk on true Episodic Pivots with strong catalysts.</li>
+                <li><strong style="color:var(--text-primary)">2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk ($60) to 2x risk ($120) on true Episodic Pivots with strong catalysts.</li>
                 <li><strong style="color:var(--text-primary)">Intraday ORB Entries (Tight Stops):</strong> EPs entered on 1-min / 5-min ORB high breakout allow 0.5%–1.5% stop distance, driving position exposure to 33%–100% of portfolio value.</li>
                 <li><strong style="color:var(--text-primary)">Institutional Backing:</strong> Catalysts attract long-term fund buyers, reducing immediate failure rates and enabling aggressive capital concentration.</li>
             </ul>
@@ -341,11 +350,19 @@
 
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
 
-            <h4 style="color:var(--accent-green); margin-bottom:8px;">Automated Earned Sizing Framework</h4>
+            <h4 style="color:var(--accent-green); margin-bottom:8px;">Earned Sizing Framework</h4>
             <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li><strong style="color:var(--text-primary)">Tier 3 (0-4 Streak):</strong> 0.50% Equity Risk. Build discipline with zero dollar anxiety (~$60 on $12k).</li>
-                <li><strong style="color:var(--text-primary)">Tier 2 (5-9 Streak):</strong> 0.75% Equity Risk. Earned position scaling (~$92 on $12k).</li>
-                <li><strong style="color:var(--text-primary)">Tier 1 (10+ Streak):</strong> 1.00% Equity Risk. Full compounding mode unlocked (~$123 on $12k).</li>
+                <li><strong style="color:var(--text-primary)">Tier 3 (0-4 Streak):</strong> Fixed $60 risk mode recommended. Rebuild discipline without dollar anxiety.</li>
+                <li><strong style="color:var(--text-primary)">Tier 2 (5-9 Streak):</strong> Unlocks 0.50% Dynamic Equity Sizing. Earned position scaling.</li>
+                <li><strong style="color:var(--text-primary)">Tier 1 (10+ Streak):</strong> Unlocks 1.00% Full Geometric Compounding Mode.</li>
+            </ul>
+
+            <h4 style="color:var(--accent-purple); margin-bottom:8px;">Zero-Leeway 4-Point Audit</h4>
+            <ul style="font-size:0.8rem; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
+                <li>1. Situational Awareness / Posture Aligned</li>
+                <li>2. Playbook Setup Quality Met</li>
+                <li>3. Share Count Pre-Calculated</li>
+                <li>4. Hard Stop Loss Placed & Honored</li>
             </ul>
         </div>
     </div>
@@ -353,7 +370,7 @@
     <script>
         let appState = {
             streak: 0,
-            tier: 'Tier 3 (0.50%)',
+            tier: 'Tier 3 ($60)',
             posture: 'YES',
             inputs: {},
             history: []
@@ -390,6 +407,7 @@
         function handleInputSave() {
             appState.inputs = {
                 sizerEquity: document.getElementById('sizerEquity').value,
+                sizerRiskMode: document.getElementById('sizerRiskMode').value,
                 sizerConviction: document.getElementById('sizerConviction').value,
                 sizerEntry: document.getElementById('sizerEntry').value,
                 sizerStop: document.getElementById('sizerStop').value,
@@ -414,17 +432,23 @@
             }
         }
 
+        function getBaseRiskFromStreak(streak) {
+            if (streak >= 10) return 120;
+            if (streak >= 5) return 90;
+            return 60;
+        }
+
         function getEarnedRiskPct(streak) {
             if (streak >= 10) return 1.00;
-            if (streak >= 5) return 0.75;
+            if (streak >= 5) return 0.50;
             return 0.50;
         }
 
         function getTierNameFromStreak(streak) {
-            const pct = getEarnedRiskPct(streak);
-            if (streak >= 10) return `Tier 1 (1.00%)`;
-            if (streak >= 5) return `Tier 2 (0.75%)`;
-            return `Tier 3 (0.50%)`;
+            const risk = getBaseRiskFromStreak(streak);
+            if (streak >= 10) return `Tier 1 ($${risk})`;
+            if (streak >= 5) return `Tier 2 ($${risk})`;
+            return `Tier 3 ($${risk})`;
         }
 
         function updateEarnedRecommendation() {
@@ -436,27 +460,33 @@
                 recBox.style.background = 'rgba(245, 158, 11, 0.12)';
                 recBox.style.borderColor = 'var(--accent-yellow)';
                 recBox.style.color = 'var(--accent-yellow)';
-                recBox.innerHTML = `🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Active Base Risk: <strong>0.50% Equity Risk</strong>. Build a clean 5-trade audit streak to unlock Tier 2 (0.75% Equity).</span>`;
+                recBox.innerHTML = `🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>Fixed $60 Dollar Risk</strong>. Build a clean 5-trade audit streak to unlock dynamic % equity compounding.</span>`;
             } else if (streak < 10) {
                 recBox.style.background = 'rgba(16, 185, 129, 0.12)';
                 recBox.style.borderColor = 'var(--accent-green)';
                 recBox.style.color = 'var(--accent-green)';
-                recBox.innerHTML = `⚡ <strong>EARNED SIZING STATUS: Tier 2 (Process Proven)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Active Base Risk: <strong>0.75% Equity Risk</strong>. Earned position scaling active! Push to 10 streak for 1.00% Full Risk.</span>`;
+                recBox.innerHTML = `⚡ <strong>EARNED SIZING STATUS: Tier 2 (Process Proven)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>UNLOCKED 0.50% Dynamic % Sizing</strong>. You earned position scaling! You can switch mode to Dynamic % Sizing.</span>`;
             } else {
                 recBox.style.background = 'rgba(139, 92, 246, 0.15)';
                 recBox.style.borderColor = 'var(--accent-purple)';
                 recBox.style.color = 'var(--accent-purple)';
-                recBox.innerHTML = `🚀 <strong>EARNED SIZING STATUS: Tier 1 (Mastery Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Active Base Risk: <strong>1.00% FULL EQUITY COMPOUNDING</strong>. Institutional execution streak active!</span>`;
+                recBox.innerHTML = `🚀 <strong>EARNED SIZING STATUS: Tier 1 (Mastery Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>FULL COMPOUNDING UNLOCKED (1.00% Dynamic Risk)</strong>. Institutional execution streak active!</span>`;
             }
         }
 
         function getEffectiveRisk() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12335;
+            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
             const streak = appState.streak;
+            const mode = document.getElementById('sizerRiskMode') ? document.getElementById('sizerRiskMode').value : 'FIXED';
             const convictionMult = (document.getElementById('sizerConviction') && document.getElementById('sizerConviction').value === '2x') ? 2 : 1;
 
-            const pct = getEarnedRiskPct(streak);
-            const baseRisk = equity * (pct / 100);
+            let baseRisk = 0;
+            if (mode === 'FIXED') {
+                baseRisk = getBaseRiskFromStreak(streak);
+            } else {
+                const pct = getEarnedRiskPct(streak);
+                baseRisk = equity * (pct / 100);
+            }
 
             let risk = baseRisk * convictionMult;
 
@@ -470,13 +500,21 @@
         }
 
         function updateHUD() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12335;
-            const pct = getEarnedRiskPct(appState.streak);
-            const baseRisk = equity * (pct / 100);
+            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
+            const mode = document.getElementById('sizerRiskMode') ? document.getElementById('sizerRiskMode').value : 'FIXED';
+            
+            let baseRisk = 0;
+            if (mode === 'FIXED') {
+                baseRisk = getBaseRiskFromStreak(appState.streak);
+            } else {
+                baseRisk = equity * (getEarnedRiskPct(appState.streak) / 100);
+            }
+
+            const baseRiskPct = equity > 0 ? ((baseRisk / equity) * 100).toFixed(2) : "0.00";
 
             document.getElementById('hudStreak').innerText = appState.streak + " / 10";
-            document.getElementById('hudTier').innerText = appState.tier || "Tier 3 (0.50%)";
-            document.getElementById('hudRiskPct').innerText = `Base Risk: $${baseRisk.toFixed(2)} (${pct.toFixed(2)}% Equity)`;
+            document.getElementById('hudTier').innerText = appState.tier || "Tier 3 ($60)";
+            document.getElementById('hudRiskPct').innerText = `Base Risk: $${baseRisk.toFixed(2)} (${baseRiskPct}% Equity)`;
             
             updateEarnedRecommendation();
         }
@@ -493,10 +531,11 @@
         }
 
         function calculateSize() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12335;
+            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
             const entry = parseFloat(document.getElementById('sizerEntry').value) || 0;
             const stop = parseFloat(document.getElementById('sizerStop').value) || 0;
             const convictionMode = document.getElementById('sizerConviction').value;
+            const riskMode = document.getElementById('sizerRiskMode').value;
             const is2x = convictionMode === '2x';
             
             const effectiveRisk = getEffectiveRisk();
@@ -525,12 +564,12 @@
                     banner.style.background = 'rgba(139, 92, 246, 0.2)';
                     banner.style.color = 'var(--accent-purple)';
                     banner.style.borderColor = 'var(--accent-purple)';
-                    banner.innerText = `⚡ HEAVY CONVICTION RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - 2x EP MODE)`;
+                    banner.innerText = `⚡ HEAVY CONVICTION RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - 2x EP MODE [${riskMode}])`;
                 } else {
                     banner.style.background = 'rgba(59, 130, 246, 0.1)';
                     banner.style.color = 'var(--accent-blue)';
                     banner.style.borderColor = 'var(--accent-blue)';
-                    banner.innerText = `ACTIVE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - STANDARD SINGLE)`;
+                    banner.innerText = `ACTIVE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - STANDARD SINGLE [${riskMode}])`;
                 }
             }
 
@@ -593,8 +632,8 @@
                 appState.tier = getTierNameFromStreak(appState.streak);
             } else {
                 appState.streak = 0;
-                appState.tier = "Tier 3 (0.50%)";
-                alert("Process Audit Failed! Streak reset to Day 0. Active risk forced back to Tier 3 (0.50%).");
+                appState.tier = "Tier 3 ($60)";
+                alert("Process Audit Failed! Streak reset to Day 0. Active risk forced back to Tier 3 ($60).");
             }
 
             const tradeRecord = {
@@ -706,11 +745,13 @@
 
         function generateGeminiUpdate() {
             const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-            const equity = document.getElementById('sizerEquity').value || '12335';
+            const equity = document.getElementById('sizerEquity').value || '12000';
+            const mode = document.getElementById('sizerRiskMode').value;
 
             let text = `=== STOCKBEE DAILY PROCESS AUDIT (${dateStr}) ===\n`;
             text += `• Account Equity: $${parseFloat(equity).toLocaleString()}\n`;
             text += `• Market Posture: ${appState.posture}\n`;
+            text += `• Sizing Mode: ${mode}\n`;
             text += `• Streak Status: ${appState.streak} / 10 Consecutive Validated Trades\n`;
             text += `• Active Risk Tier: ${appState.tier}\n\n`;
 
