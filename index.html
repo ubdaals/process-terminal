@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Process Terminal">
-    <title>Stockbee Process Terminal v3.4</title>
+    <title>Stockbee Process Terminal v3.5</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.4</span>
+            <span class="badge">PROCESS TERMINAL v3.5</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -130,7 +130,7 @@
     <!-- TRIGGER PLANS -->
     <div class="card">
         <div class="card-title">Trigger Plans (Decide Here, Not At The Trigger)</div>
-        <div class="small" style="color: var(--text-secondary); margin-bottom: 12px;">Before the open: set up the sizer below for each candidate, then tap "Save as Trigger Plan". At the trigger: read your pre-set size, or match your stop price to a row. No form, no decisions.</div>
+        <div class="small" style="color: var(--text-secondary); margin-bottom: 12px;">Before the open: set up the sizer below for each candidate with a rough price, then tap "Save as Trigger Plan". At the open: after the opening-range candle closes (before the breakout), type its high and low into the card for your exact size. No form, no decisions.</div>
         <div id="plansList"></div>
     </div>
 
@@ -1322,6 +1322,20 @@
             renderPlans();
         }
 
+        function setPlanEntry(id, v) {
+            const pl = appState.plans.find(x => x.id === id);
+            const n = parseFloat(v);
+            if (!pl || !(n > 0)) { renderPlans(); return; }
+            pl.entry = n;
+            saveState();
+            renderPlans();
+        }
+
+        function setLadderOpen(id, open) {
+            const pl = appState.plans.find(x => x.id === id);
+            if (pl) pl.ladderOpen = !!open;
+        }
+
         function planQuick(id) {
             const pl = appState.plans.find(x => x.id === id);
             if (!pl) return;
@@ -1378,10 +1392,13 @@
                 const e = pl.entry;
                 const preset = maxSharesFor(e, planStopAt(pl, pl.widest), r);
                 const rows = [0.5, 1, 1.5, 2, 3, 5].map(d => {
-                    const sp = planStopAt(pl, d);
+                    const dist = Math.round(e * d) / 100;
+                    const sp = pl.direction === -1 ? e + dist : e - dist;
                     const sh = maxSharesFor(e, sp, r);
-                    return '<tr><td>' + d + '%</td><td>$' + sp.toFixed(2) + '</td><td><strong>' + sh + '</strong></td><td>' + (eq > 0 ? (sh * e / eq * 100).toFixed(0) : 0) + '%</td><td>' + money(sh * Math.abs(e - sp)) + '</td></tr>';
+                    return '<tr><td>$' + dist.toFixed(2) + '</td><td>' + d + '%</td><td><strong>' + sh + '</strong></td><td>' + (eq > 0 ? (sh * e / eq * 100).toFixed(0) : 0) + '%</td><td>' + money(sh * Math.abs(e - sp)) + '</td></tr>';
                 }).join('');
+                const entryLbl = pl.direction === -1 ? 'Entry (ORB low)' : 'Entry (ORB high)';
+                const stopLbl = pl.direction === -1 ? 'Stop (ORB high)' : 'Stop (ORB low)';
                 const key = KEY_BY_SETUP[pl.setup];
                 const tags = [CLASS_LABEL[r.cls], pl.hold === 'INTRADAY' ? 'intraday' : 'swing', QUALITY_LABEL[pl.quality], pl.gate ? 'gate passed' : 'no gate'];
                 if (pl.conviction === '2x') tags.push(r.conviction.active ? '2x active' : '2x not available');
@@ -1397,11 +1414,15 @@
                     '<button class="btn-danger" onclick="removePlan(' + pl.id + ')">✕</button></div>' +
                     '<div class="small" style="color: var(--text-secondary); margin: 4px 0 8px 0;">' + esc(tags.join(' | ')) + '</div>' +
                     '<div class="alert-banner tone-' + tone + '" style="margin-bottom: 8px;">' + banner + '</div>' +
+                    '<div class="small" style="color: var(--text-secondary); margin-bottom: 8px;">Risk budget ' + money(r.risk) + ' | Max position ' + money0(r.capPct / 100 * eq) + '. Shares = risk divided by your stop distance in dollars, so the exact entry price barely matters unless the position cap binds.</div>' +
                     '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><label style="margin: 0; white-space: nowrap;">Widest stop I would accept (%)</label>' +
                     '<input type="number" step="0.5" min="0.25" max="10" value="' + pl.widest + '" style="margin: 0; width: 80px;" onchange="setPlanWidest(' + pl.id + ', this.value)"></div>' +
-                    '<table class="mini"><thead><tr><th>Stop dist</th><th>Stop price</th><th>Shares</th><th>Position</th><th>Risk</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-                    '<div class="grid-2"><div><label>Actual entry</label><input type="number" step="0.01" inputmode="decimal" id="pqe_' + pl.id + '" value="' + esc(pl.qEntry) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div>' +
-                    '<div><label>Actual stop</label><input type="number" step="0.01" inputmode="decimal" id="pqs_' + pl.id + '" value="' + esc(pl.qStop) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div></div>' +
+                    '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><label style="margin: 0; white-space: nowrap;">Rough price now ($)</label>' +
+                    '<input type="number" step="0.01" inputmode="decimal" value="' + e.toFixed(2) + '" style="margin: 0; width: 100px;" onchange="setPlanEntry(' + pl.id + ', this.value)"></div>' +
+                    '<details' + (pl.ladderOpen ? ' open' : '') + ' ontoggle="setLadderOpen(' + pl.id + ', this.open)" style="margin-bottom: 8px;"><summary class="small" style="cursor: pointer; color: var(--accent-blue);">Stop-distance ladder (size by the dollar distance from entry to stop)</summary>' +
+                    '<table class="mini"><thead><tr><th>Stop distance</th><th>% of price</th><th>Shares</th><th>Position</th><th>Risk</th></tr></thead><tbody>' + rows + '</tbody></table></details>' +
+                    '<div class="grid-2"><div><label>' + entryLbl + '</label><input type="number" step="0.01" inputmode="decimal" id="pqe_' + pl.id + '" value="' + esc(pl.qEntry) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div>' +
+                    '<div><label>' + stopLbl + '</label><input type="number" step="0.01" inputmode="decimal" id="pqs_' + pl.id + '" value="' + esc(pl.qStop) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div></div>' +
                     '<div id="pqr_' + pl.id + '" style="margin-bottom: 8px;"><span class="small" style="color: var(--text-secondary);">Enter the actual entry and stop</span></div>' +
                     '<button class="btn btn-secondary" style="margin-bottom: 0;" onclick="loadPlan(' + pl.id + ')">Load into Sizer and Trade Log</button>' +
                     '<div class="small" style="color: var(--text-secondary); margin-top: 8px;">If the stop is wider than 5%, or you hesitate, take the pre-set size or skip. Never size up in the moment.</div>' +
@@ -2052,7 +2073,8 @@
                 '<h4 style="color:var(--accent-yellow);">Trigger Workflow (so you never size in the moment)</h4>' +
                 '<ul class="rules-list">' +
                 '<li><strong>Pre-market:</strong> evaluate the Market Monitor, read Today\'s Mode and the Directive, then save a Trigger Plan for each candidate (2 or 3 names).</li>' +
-                '<li><strong>At the trigger:</strong> read the pre-set size, or match your stop price to a ladder row. Optionally type the actual entry and stop for the exact number.</li>' +
+                '<li><strong>At the open:</strong> your entry is the opening-range high and your stop is its low. Both are known when that candle closes, which is before the breakout, so type them into the plan card for the exact size. The ladder and pre-set size are the backup.</li>' +
+                '<li><strong>Why a rough price is fine:</strong> shares equal risk dollars divided by the dollar distance to your stop, so the exact entry price barely matters. It only matters when the position cap binds.</li>' +
                 '<li><strong>After the trade:</strong> tap Load into Sizer and Trade Log, confirm the numbers, and log it. The audit is after the fact.</li>' +
                 '<li>The pre-set size is built for your widest acceptable stop, so a tighter stop is always at or under your risk budget.</li>' +
                 '</ul>' +
