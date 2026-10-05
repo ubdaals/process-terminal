@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Process Terminal">
-    <title>Stockbee Process Terminal v3.3</title>
+    <title>Stockbee Process Terminal v3.4</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.3</span>
+            <span class="badge">PROCESS TERMINAL v3.4</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -125,6 +125,13 @@
             <div class="metric-box"><div class="metric-label">Exposure Room</div><div class="metric-val" id="modeRoom">-</div><div class="metric-sub" id="modeRoomSub"></div></div>
         </div>
         <div class="rules-box" id="modeNext"></div>
+    </div>
+
+    <!-- TRIGGER PLANS -->
+    <div class="card">
+        <div class="card-title">Trigger Plans (Decide Here, Not At The Trigger)</div>
+        <div class="small" style="color: var(--text-secondary); margin-bottom: 12px;">Before the open: set up the sizer below for each candidate, then tap "Save as Trigger Plan". At the trigger: read your pre-set size, or match your stop price to a row. No form, no decisions.</div>
+        <div id="plansList"></div>
     </div>
 
     <!-- RISK & STREAK HUD -->
@@ -346,6 +353,8 @@
             </div>
             <ul id="sizerNotes" class="reason-list" style="text-align:left;"></ul>
         </div>
+
+        <button class="btn btn-secondary" style="margin-top: 12px;" onclick="savePlan()">📌 Save as Trigger Plan (do this pre-market)</button>
 
         <div style="margin-top: 14px;">
             <label style="margin-bottom: 6px; font-weight: bold; color: var(--accent-blue);">Stockbee Selling Into Strength Framework:</label>
@@ -735,6 +744,7 @@
             }
         };
 
+        const MAX_PLANS = 6;
         const LOOSEN_DELAY_DAYS = 7;   // changes that make rules looser take effect after this many days
         const DEFAULT_CONFIG = JSON.parse(JSON.stringify(CONFIG));
         const SCHEMA = [];
@@ -807,7 +817,8 @@
                 version: 3, equity: 12000, peak: 0, peakConfirmed: false, equityUpdated: null,
                 streak: 0, streakStart: null, posture: 'YES', breadth: null,
                 ddLock: { until: 0, armed: true }, dayLock: '', inputs: {}, history: [],
-                config: { overrides: {}, pending: [] }
+                config: { overrides: {}, pending: [] },
+                plans: []
             };
         }
 
@@ -871,6 +882,18 @@
                         .map(x => ({ path: x.path, value: Number(x.value), effectiveAt: Number(x.effectiveAt) }))
                     : [];
                 s.config = { overrides: ov, pending: pend };
+            }
+            if (Array.isArray(p.plans)) {
+                s.plans = p.plans.filter(x => x && Number(x.id) > 0 && x.ticker && Number(x.entry) > 0 && KEY_BY_SETUP[x.setup])
+                    .map(x => ({
+                        id: Number(x.id), createdAt: Number(x.createdAt) || Number(x.id), ticker: String(x.ticker).toUpperCase().slice(0, 10),
+                        setup: x.setup, source: x.source || 'OTHER', hold: x.hold === 'INTRADAY' ? 'INTRADAY' : 'SWING',
+                        quality: QUALITY_LABEL[x.quality] ? x.quality : 'STANDARD', conviction: x.conviction === '2x' ? '2x' : '1x',
+                        mode: x.mode === 'DYNAMIC' ? 'DYNAMIC' : 'FIXED', gate: !!x.gate, entry: Number(x.entry),
+                        direction: x.direction === -1 ? -1 : 1, widest: Number(x.widest) > 0 ? Number(x.widest) : 2,
+                        qEntry: x.qEntry || '', qStop: x.qStop || ''
+                    }))
+                    .filter(x => Date.now() - x.createdAt < 3 * DAY).slice(0, MAX_PLANS);
             }
             s.history = Array.isArray(p.history) ? p.history.map(normalizeTrade) : [];
             return s;
@@ -1098,10 +1121,17 @@
             return { fit: fit, regime: rg.key, demoted: demoted };
         }
 
-        function sizeClassFor(setupName, posture, tier, defense) {
+        function readSizerInputs() {
+            return {
+                setup: val('tradeSetup'), hold: val('sizerHold') || 'SWING', quality: val('sizerQuality') || 'STANDARD',
+                conviction: val('sizerConviction') || '1x', mode: val('sizerRiskMode') || 'FIXED', mood: val('tradeMood') || 'CALM',
+                gate: checked('cat1') && checked('cat2') && checked('cat3')
+            };
+        }
+
+        function sizeClassFor(setupName, posture, tier, defense, gateOK) {
             const key = KEY_BY_SETUP[setupName];
             const base = SETUP_CLASS[key] || 'SINGLE';
-            const gateOK = checked('cat1') && checked('cat2') && checked('cat3');
             if (base === 'EP') return gateOK ? 'EP' : 'SINGLE';
             if (HOT_ELIGIBLE.indexOf(key) >= 0) return (gateOK && posture === 'YES' && !defense) ? 'HOT' : 'SINGLE';
             return base;
@@ -1242,6 +1272,144 @@
             $('modeNext').innerHTML = next;
         }
 
+        // ---------- trigger plans ----------
+        function planInputs(pl) {
+            return { setup: pl.setup, hold: pl.hold, quality: pl.quality, conviction: pl.conviction, mode: pl.mode, mood: val('tradeMood') || 'CALM', gate: pl.gate };
+        }
+        function planStopAt(pl, d) { return pl.direction === -1 ? pl.entry * (1 + d / 100) : pl.entry * (1 - d / 100); }
+        function planWhyZero(r) {
+            if (r.lock) return r.lock;
+            if (r.risk <= 0 && TILT_STATES.indexOf(val('tradeMood')) >= 0) return 'Tilt state tagged (' + val('tradeMood') + '). Step away first.';
+            if (r.risk <= 0) return 'No risk budget left today.';
+            return '';
+        }
+
+        function savePlan() {
+            const inp = readSizerInputs();
+            const entry = num('sizerEntry');
+            let tk = (val('tradeTicker') || '').trim().toUpperCase();
+            if (!tk) {
+                const a = prompt('Ticker for this plan:');
+                if (a === null) return;
+                tk = a.trim().toUpperCase();
+            }
+            if (!tk) { alert('A ticker is required.'); return; }
+            if (!(entry > 0)) { alert('Enter the expected trigger / entry price in the sizer first.'); return; }
+            const others = appState.plans.filter(x => x.ticker !== tk);
+            if (others.length >= MAX_PLANS) { alert('Max ' + MAX_PLANS + ' plans. Remove one first.'); return; }
+            appState.plans = others;
+            appState.plans.unshift({
+                id: Date.now(), createdAt: Date.now(), ticker: tk.slice(0, 10), setup: inp.setup, source: val('tradeSource') || 'OTHER',
+                hold: inp.hold, quality: inp.quality, conviction: inp.conviction, mode: inp.mode, gate: inp.gate, entry: entry,
+                direction: KEY_BY_SETUP[inp.setup] === 'SHORT' ? -1 : 1, widest: 2, qEntry: '', qStop: ''
+            });
+            saveState();
+            refreshAll();
+        }
+
+        function removePlan(id) {
+            appState.plans = appState.plans.filter(x => x.id !== id);
+            saveState();
+            renderPlans();
+        }
+
+        function setPlanWidest(id, v) {
+            const pl = appState.plans.find(x => x.id === id);
+            const n = parseFloat(v);
+            if (!pl || !(n >= 0.25 && n <= 10)) { renderPlans(); return; }
+            pl.widest = n;
+            saveState();
+            renderPlans();
+        }
+
+        function planQuick(id) {
+            const pl = appState.plans.find(x => x.id === id);
+            if (!pl) return;
+            pl.qEntry = $('pqe_' + id).value;
+            pl.qStop = $('pqs_' + id).value;
+            saveState();
+            const out = $('pqr_' + id);
+            const e = parseFloat(pl.qEntry), st = parseFloat(pl.qStop);
+            const r = computeRisk(planInputs(pl));
+            if (!(e > 0) || !(st > 0) || e === st) { out.innerHTML = '<span class="small" style="color: var(--text-secondary);">Enter the actual entry and stop</span>'; return; }
+            if (pl.direction === 1 ? st > e : st < e) { out.innerHTML = '<span style="color: var(--accent-red); font-weight: 700;">Stop is on the wrong side of entry</span>'; return; }
+            const sh = maxSharesFor(e, st, r);
+            if (sh <= 0) { out.innerHTML = '<span style="color: var(--accent-red); font-weight: 700;">0 shares: ' + esc(planWhyZero(r) || 'size is zero') + '</span>'; return; }
+            const risk = sh * Math.abs(e - st);
+            out.innerHTML = '<span style="font-size: 1.3rem; font-weight: 800; color: var(--accent-blue);">' + sh + ' shares</span> <span class="small" style="color: var(--text-secondary);">risk ' + money(risk) + ' (' + (risk / appState.equity * 100).toFixed(2) + '%), position ' + (sh * e / appState.equity * 100).toFixed(0) + '% of equity</span>';
+        }
+
+        function loadPlan(id) {
+            const pl = appState.plans.find(x => x.id === id);
+            if (!pl) return;
+            $('tradeSetup').value = pl.setup;
+            $('sizerHold').value = pl.hold;
+            $('sizerQuality').value = pl.quality;
+            $('sizerConviction').value = pl.conviction;
+            $('sizerRiskMode').value = pl.mode;
+            $('tradeSource').value = pl.source;
+            ['cat1', 'cat2', 'cat3'].forEach(c => { $(c).checked = pl.gate; });
+            const e = parseFloat(pl.qEntry) > 0 ? parseFloat(pl.qEntry) : pl.entry;
+            const st = parseFloat(pl.qStop);
+            $('sizerEntry').value = e;
+            $('sizerStop').value = st > 0 ? st : '';
+            $('tradeTicker').value = pl.ticker;
+            $('tradeEntry').value = e;
+            $('tradeStop').value = st > 0 ? st : '';
+            const r = computeRisk(planInputs(pl));
+            const sh = st > 0 ? maxSharesFor(e, st, r) : maxSharesFor(pl.entry, planStopAt(pl, pl.widest), r);
+            $('tradeShares').value = sh > 0 ? sh : '';
+            handleInputSave();
+            refreshAll();
+            try { $('tradeTicker').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) { /* ignore */ }
+        }
+
+        function renderPlans() {
+            const el = $('plansList');
+            if (!el) return;
+            if (!appState.plans.length) {
+                el.innerHTML = '<div class="small" style="color: var(--text-secondary);">No plans yet.</div>';
+                return;
+            }
+            const eq = appState.equity;
+            el.innerHTML = appState.plans.map(pl => {
+                const r = computeRisk(planInputs(pl));
+                const why = planWhyZero(r);
+                const e = pl.entry;
+                const preset = maxSharesFor(e, planStopAt(pl, pl.widest), r);
+                const rows = [0.5, 1, 1.5, 2, 3, 5].map(d => {
+                    const sp = planStopAt(pl, d);
+                    const sh = maxSharesFor(e, sp, r);
+                    return '<tr><td>' + d + '%</td><td>$' + sp.toFixed(2) + '</td><td><strong>' + sh + '</strong></td><td>' + (eq > 0 ? (sh * e / eq * 100).toFixed(0) : 0) + '%</td><td>' + money(sh * Math.abs(e - sp)) + '</td></tr>';
+                }).join('');
+                const key = KEY_BY_SETUP[pl.setup];
+                const tags = [CLASS_LABEL[r.cls], pl.hold === 'INTRADAY' ? 'intraday' : 'swing', QUALITY_LABEL[pl.quality], pl.gate ? 'gate passed' : 'no gate'];
+                if (pl.conviction === '2x') tags.push(r.conviction.active ? '2x active' : '2x not available');
+                const tone = why ? 'red' : 'blue';
+                const banner = why
+                    ? 'NO SIZE: ' + esc(why)
+                    : 'PRE-SET SIZE: ' + preset + ' shares <span class="small">(risk stays at or under ' + money(r.risk) + ' for any stop up to ' + pl.widest + '%)</span>';
+                const fit = getSetupFit(pl.setup).fit;
+                const fitTxt = fit === 'FOCUS' ? '<span style="color: var(--accent-green);">FOCUS</span>' : (fit === 'AVOID' ? '<span style="color: var(--accent-red);">AVOID today</span>' : '<span style="color: var(--accent-yellow);">NEUTRAL</span>');
+                return '<div class="metric-box" style="text-align: left; margin-bottom: 12px;">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">' +
+                    '<div><strong style="font-size: 1.05rem;">' + esc(pl.ticker) + '</strong> <span class="small" style="color: var(--text-secondary);">' + esc(SETUPS[key]) + ' at ~$' + e.toFixed(2) + ' | ' + fitTxt + '</span></div>' +
+                    '<button class="btn-danger" onclick="removePlan(' + pl.id + ')">✕</button></div>' +
+                    '<div class="small" style="color: var(--text-secondary); margin: 4px 0 8px 0;">' + esc(tags.join(' | ')) + '</div>' +
+                    '<div class="alert-banner tone-' + tone + '" style="margin-bottom: 8px;">' + banner + '</div>' +
+                    '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><label style="margin: 0; white-space: nowrap;">Widest stop I would accept (%)</label>' +
+                    '<input type="number" step="0.5" min="0.25" max="10" value="' + pl.widest + '" style="margin: 0; width: 80px;" onchange="setPlanWidest(' + pl.id + ', this.value)"></div>' +
+                    '<table class="mini"><thead><tr><th>Stop dist</th><th>Stop price</th><th>Shares</th><th>Position</th><th>Risk</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+                    '<div class="grid-2"><div><label>Actual entry</label><input type="number" step="0.01" inputmode="decimal" id="pqe_' + pl.id + '" value="' + esc(pl.qEntry) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div>' +
+                    '<div><label>Actual stop</label><input type="number" step="0.01" inputmode="decimal" id="pqs_' + pl.id + '" value="' + esc(pl.qStop) + '" oninput="planQuick(' + pl.id + ')" style="margin-bottom: 8px;"></div></div>' +
+                    '<div id="pqr_' + pl.id + '" style="margin-bottom: 8px;"><span class="small" style="color: var(--text-secondary);">Enter the actual entry and stop</span></div>' +
+                    '<button class="btn btn-secondary" style="margin-bottom: 0;" onclick="loadPlan(' + pl.id + ')">Load into Sizer and Trade Log</button>' +
+                    '<div class="small" style="color: var(--text-secondary); margin-top: 8px;">If the stop is wider than 5%, or you hesitate, take the pre-set size or skip. Never size up in the moment.</div>' +
+                    '</div>';
+            }).join('');
+            appState.plans.forEach(pl => { if (parseFloat(pl.qEntry) > 0 && parseFloat(pl.qStop) > 0) planQuick(pl.id); });
+        }
+
         function renderScorecard() {
             const el = $('scorecard');
             if (!el) return;
@@ -1271,33 +1439,35 @@
             return null;
         }
 
-        function convictionStatus() {
-            const requested = val('sizerConviction') === '2x';
+        function convictionStatus(inp) {
+            inp = inp || readSizerInputs();
+            const requested = inp.conviction === '2x';
             const reasons = [];
             const tier = effectiveTier();
             if (tier > 2) reasons.push('needs Tier 2+');
             if (effectivePosture() !== 'YES') reasons.push('needs posture YES');
             if (inDefense()) reasons.push('drawdown defense is active');
-            if (EP_FAMILY.indexOf(val('tradeSetup')) < 0) reasons.push('setup is not in the EP family');
-            if (!(checked('cat1') && checked('cat2') && checked('cat3'))) reasons.push('catalyst checks incomplete');
+            if (EP_FAMILY.indexOf(inp.setup) < 0) reasons.push('setup is not in the EP family');
+            if (!inp.gate) reasons.push('catalyst checks incomplete');
             return { requested: requested, eligible: reasons.length === 0, active: requested && reasons.length === 0, reasons: reasons };
         }
 
-        function computeRisk() {
+        function computeRisk(inp) {
+            inp = inp || readSizerInputs();
             const equity = appState.equity;
             const posture = effectivePosture();
             const tier = effectiveTier();
             const t = CONFIG.tiers[tier];
             const notes = [];
 
-            const modeSel = val('sizerRiskMode');
+            const modeSel = inp.mode;
             const mode = (modeSel === 'DYNAMIC' && tier <= 2) ? 'DYNAMIC' : 'FIXED';
             if (modeSel === 'DYNAMIC' && tier > 2) notes.push('Dynamic % is locked at Tier 3 / drawdown defense: using fixed dollar risk.');
 
             const pctRisk = equity * t.pct / 100;
             const base = mode === 'DYNAMIC' ? pctRisk : Math.min(t.fixed, pctRisk);
 
-            const conv = convictionStatus();
+            const conv = convictionStatus(inp);
             let risk = base;
             if (conv.active) { risk *= CONFIG.conviction2xMult; notes.push('2x conviction active.'); }
             else if (conv.requested) notes.push('2x not available: ' + conv.reasons.join(', ') + '. Sizing at 1x.');
@@ -1314,12 +1484,12 @@
 
             const lock = getLockReason();
             if (lock) { risk = 0; }
-            if (isTilt()) { risk = 0; notes.push('You tagged a tilt state (' + val('tradeMood') + '). Step away, then re-tag honestly. Sizer is off.'); }
+            if (TILT_STATES.indexOf(inp.mood) >= 0) { risk = 0; notes.push('You tagged a tilt state (' + inp.mood + '). Step away, then re-tag honestly. Sizer is off.'); }
 
-            const hold = val('sizerHold') || 'SWING';
+            const hold = inp.hold;
             const defense = hardLockActive() || inDefense();
-            const cls = sizeClassFor(val('tradeSetup'), posture, tier, defense);
-            const quality = val('sizerQuality') || 'STANDARD';
+            const cls = sizeClassFor(inp.setup, posture, tier, defense, inp.gate);
+            const quality = inp.quality;
             const classCap = capFor(cls, tier, posture, hold, quality);
             const totalCap = totalCapFor(posture, tier);
             const openPct = openExposurePct();
@@ -1476,12 +1646,14 @@
             renderConvictionUI();
             renderDirective();
             renderMode();
+            renderPlans();
             const fitInfo = getSetupFit(val('tradeSetup'));
             const fb = $('fitBadge');
             if (fitInfo.fit === 'FOCUS') { setTone(fb, 'green'); fb.textContent = '✓ FOCUS: on today\'s list'; }
             else if (fitInfo.fit === 'AVOID') { setTone(fb, 'red'); fb.textContent = '✕ AVOID today' + (fitInfo.demoted ? ' (defense: focus only)' : ''); }
             else { setTone(fb, 'yellow'); fb.textContent = '◦ NEUTRAL: only an A+ example'; }
-            $('classStatus').textContent = 'Size class: ' + CLASS_LABEL[r.cls] + '. Max ' + r.classCap.toFixed(0) + '% of equity per position (' + (r.hold === 'INTRADAY' ? 'intraday' : 'swing carry') + '), ' + r.remaining.toFixed(0) + '% total open-exposure room left.';
+            const gateHint = (EP_FAMILY.indexOf(val('tradeSetup')) >= 0 && r.cls === 'SINGLE') ? ' (catalyst gate not passed, so an EP is sized as a single)' : '';
+            $('classStatus').textContent = 'Size class: ' + CLASS_LABEL[r.cls] + gateHint + '. Max ' + r.classCap.toFixed(0) + '% of equity per position (' + (r.hold === 'INTRADAY' ? 'intraday' : 'swing carry') + '), ' + r.remaining.toFixed(0) + '% total open-exposure room left.';
 
             if (entry > 0 && stop > 0 && entry !== stop) {
                 const stopPct = (Math.abs(entry - stop) / entry * 100).toFixed(2);
@@ -1613,6 +1785,7 @@
             else if (minor) applyMinorViolation();
 
             appState.history.unshift(trade);
+            appState.plans = appState.plans.filter(x => x.ticker !== ticker);
 
             if (exitVal > 0) finalizeClose(trade, exitVal);
 
@@ -1876,6 +2049,13 @@
             const stopRows = [1, 1.5, 2, 3, 5].map(sp => '<tr><td>' + sp + '% stop</td><td>' + Math.min(999, 0.5 / sp * 100).toFixed(0) + '%</td><td>' + Math.min(999, 0.75 / sp * 100).toFixed(0) + '%</td><td>' + Math.min(999, 1.0 / sp * 100).toFixed(0) + '%</td></tr>').join('');
             const capRow = (name, cls) => '<tr><td>' + name + '</td><td>' + C.caps[cls][3] + '%</td><td>' + C.caps[cls][2] + '%</td><td>' + C.caps[cls][1] + '%</td></tr>';
             $('rulesDynamic').innerHTML =
+                '<h4 style="color:var(--accent-yellow);">Trigger Workflow (so you never size in the moment)</h4>' +
+                '<ul class="rules-list">' +
+                '<li><strong>Pre-market:</strong> evaluate the Market Monitor, read Today\'s Mode and the Directive, then save a Trigger Plan for each candidate (2 or 3 names).</li>' +
+                '<li><strong>At the trigger:</strong> read the pre-set size, or match your stop price to a ladder row. Optionally type the actual entry and stop for the exact number.</li>' +
+                '<li><strong>After the trade:</strong> tap Load into Sizer and Trade Log, confirm the numbers, and log it. The audit is after the fact.</li>' +
+                '<li>The pre-set size is built for your widest acceptable stop, so a tighter stop is always at or under your risk budget.</li>' +
+                '</ul>' +
                 '<h4 style="color:var(--accent-green);">Earned Risk Tiers (current settings)</h4>' +
                 '<ul class="rules-list">' +
                 '<li><strong>Tier 3:</strong> $' + C.tiers[3].fixed + ' fixed or ' + C.tiers[3].pct.toFixed(2) + '% (whichever is smaller). Always 1x.</li>' +
@@ -2037,6 +2217,7 @@
             renderBreadthResult();
             renderDirective();
             renderMode();
+            renderPlans();
             calculateSize();
             renderHistory();
             renderScorecard();
