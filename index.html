@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.8</span>
+            <span class="badge">PROCESS TERMINAL v3.9</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -547,6 +547,17 @@
             <div id="settingsForm"></div>
             <button class="btn btn-primary" style="margin-top: 16px;" onclick="saveSettings()">Save Changes</button>
             <button class="btn btn-secondary" style="margin-top: 8px;" onclick="renderSettings(true)">Load Defaults Into Form (then Save)</button>
+        </div>
+    </div>
+
+    <div id="auditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color:var(--accent-blue);">Edit Trade Audit</h3>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; margin-bottom: 0;" onclick="closeAuditModal()">X</button>
+            </div>
+            <div id="auditEditBody"></div>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="saveAuditEdit()">Save Audit</button>
         </div>
     </div>
 
@@ -2051,6 +2062,45 @@
             refreshAll();
         }
 
+        const AUDIT_CORE = [
+            { key: 'a1', label: 'Posture / situational awareness respected', fail: '#1 Posture / SA not respected' },
+            { key: 'a2', label: 'Setup met playbook criteria (incl. trigger discipline)', fail: '#2 Setup did not meet playbook criteria' },
+            { key: 'a3', label: 'Sizing pre-calculated', fail: '#3 Sizing was not pre-calculated' },
+            { key: 'a4', label: 'Stop honored', fail: '#4 Stop not honored', stop: true }
+        ];
+        let auditEditId = null;
+        function editAudit(id) {
+            const t = appState.history.find(x => x.id === id);
+            if (!t || t.status !== 'CLOSED') return;
+            auditEditId = id;
+            const fails = t.preFails || [];
+            const others = fails.filter(f => !AUDIT_CORE.some(c => c.fail === f));
+            let body = '<div class="small" style="color:var(--text-secondary);margin-bottom:10px;">' + esc(t.ticker) + ' — ' + esc(t.date || '') + ' — ' + esc(t.rMult || '') + '</div>';
+            AUDIT_CORE.forEach(c => {
+                const ok = c.stop ? t.stopHonored !== false : fails.indexOf(c.fail) < 0;
+                body += '<label style="display:block;margin-bottom:10px;font-size:0.9rem;cursor:pointer;"><input type="checkbox" id="ea_' + c.key + '"' + (ok ? ' checked' : '') + ' style="width:auto;margin-right:8px;" />' + esc(c.label) + '</label>';
+            });
+            if (others.length) body += '<div class="small" style="color:var(--text-secondary);margin-top:6px;">Other notes kept: ' + esc(others.join(' | ')) + '</div>';
+            body += '<div class="small" style="color:var(--text-secondary);margin-top:6px;">Uncheck a box to mark that checkpoint failed.</div>';
+            $('auditEditBody').innerHTML = body;
+            $('auditModal').style.display = 'block';
+        }
+        function closeAuditModal() { $('auditModal').style.display = 'none'; auditEditId = null; }
+        function saveAuditEdit() {
+            const t = appState.history.find(x => x.id === auditEditId);
+            if (!t) { closeAuditModal(); return; }
+            const fails = (t.preFails || []).filter(f => !AUDIT_CORE.some(c => c.fail === f));
+            AUDIT_CORE.forEach(c => {
+                const el = $('ea_' + c.key);
+                if (el && !el.checked && fails.indexOf(c.fail) < 0) fails.push(c.fail);
+                if (c.stop && el) t.stopHonored = el.checked;
+            });
+            t.preFails = fails;
+            t.passAudit = fails.length === 0 && t.stopHonored !== false;
+            closeAuditModal();
+            saveState();
+            refreshAll();
+        }
         function deleteTrade(id) {
             const trade = appState.history.find(t => t.id === id);
             if (trade && trade.status === 'OPEN' && trade.trims.length) { alert('This trade has banked trims that count toward your loss limits. Close it instead of deleting it.'); return; }
@@ -2074,7 +2124,9 @@
                 if (t.status === 'OPEN') {
                     auditTag = t.prePass ? '<span class="tag-open">PENDING</span>' : '<span class="tag-fail" title="' + esc(t.preFails.join(' | ')) + '">FAIL</span>';
                 } else {
-                    auditTag = t.passAudit ? '<span class="tag-pass">PASS</span>' : '<span class="tag-fail" title="' + esc(t.preFails.concat(t.stopHonored === false ? ['Stop not honored'] : []).join(' | ')) + '">FAIL</span>';
+                    const tagInner = t.passAudit ? '<span class="tag-pass">PASS</span>' : '<span class="tag-fail">FAIL</span>';
+                    const tagTitle = esc(t.preFails.concat(t.stopHonored === false ? ['Stop not honored'] : []).join(' | '));
+                    auditTag = '<span onclick="editAudit(' + t.id + ')" title="' + tagTitle + ' — click to edit audit" style="cursor:pointer;">' + tagInner + '</span>';
                 }
                 const banked = (t.trims || []).reduce((a, x) => a + x.pnl, 0);
                 let resultTag = '<span class="tag-open">OPEN</span>' + (t.trims.length ? ' <small style="color:' + (banked >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + '">' + (banked >= 0 ? '+' : '-') + '$' + Math.abs(banked).toFixed(0) + ' banked</small>' : '');
