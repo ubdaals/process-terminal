@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.6</span>
+            <span class="badge">PROCESS TERMINAL v3.7</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -940,7 +940,7 @@
             return { 'Authorization': 'Bearer ' + cloudToken(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
         }
         async function cloudConnect() {
-            const tok = ($('cloudTokenInput').value || '').trim();
+            const tok = ($('cloudTokenInput').value || '').trim() || cloudToken();
             if (!tok) { cloudStatus('Paste your token first.', true); return; }
             cloudStatus('Checking token…');
             try {
@@ -948,17 +948,31 @@
                 if (!chk.ok) throw new Error('GitHub rejected the token — check it was copied fully and has the gist scope.');
                 localStorage.setItem(CLOUD_TOKEN_KEY, tok);
                 $('cloudTokenInput').value = '';
-                const g = await fetch('https://api.github.com/gists', {
-                    method: 'POST', headers: cloudHeaders(),
-                    body: JSON.stringify({ description: 'process-terminal state (private)', public: false,
-                        files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } })
-                });
-                if (!g.ok) throw new Error('Could not create the cloud storage.');
-                const gj = await g.json();
-                localStorage.setItem(CLOUD_GIST_KEY, gj.id);
-                lastCloudPull = Date.now();
-                cloudReady = true;
-                cloudStatus('Connected — cloud storage ready.');
+                // Find this app's storage: the first device creates it, other devices rejoin it.
+                cloudStatus('Looking for your cloud storage…');
+                const list = await fetch('https://api.github.com/gists?per_page=100', { headers: cloudHeaders() });
+                if (!list.ok) throw new Error('Could not list your stored gists.');
+                const mine = (await list.json())
+                    .filter(g => g.files && g.files[CLOUD_FILE])
+                    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                if (mine.length) {
+                    localStorage.setItem(CLOUD_GIST_KEY, mine[0].id);
+                    cloudReady = true;
+                    await cloudPull();
+                    if (mine.length > 1) cloudStatus('Joined the newest of ' + mine.length + ' cloud copies. Extras can be ignored or deleted at gist.github.com.', true);
+                } else {
+                    const g = await fetch('https://api.github.com/gists', {
+                        method: 'POST', headers: cloudHeaders(),
+                        body: JSON.stringify({ description: 'process-terminal state (private)', public: false,
+                            files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } })
+                    });
+                    if (!g.ok) throw new Error('Could not create the cloud storage.');
+                    const gj = await g.json();
+                    localStorage.setItem(CLOUD_GIST_KEY, gj.id);
+                    lastCloudPull = Date.now();
+                    cloudReady = true;
+                    cloudStatus('Connected — this device created the cloud storage.');
+                }
             } catch (e) { cloudStatus('Connect failed: ' + e.message, true); }
         }
         async function cloudPush(silent) {
