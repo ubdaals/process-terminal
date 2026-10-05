@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.5</span>
+            <span class="badge">PROCESS TERMINAL v3.6</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -529,6 +529,20 @@
                 <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; margin-bottom: 0;" onclick="toggleSettings(false)">X</button>
             </div>
             <div id="settingsNote" class="small" style="color: var(--text-secondary); margin-bottom: 12px;"></div>
+            <!-- CLOUD SYNC (multi-device) -->
+            <div class="card" style="margin: 0 0 16px 0; border: 1px solid var(--border-color);">
+                <div class="card-title">Cloud Sync (use on phone + desktop)</div>
+                <div class="small" style="color: var(--text-secondary); margin-bottom: 12px;">Saves your terminal data to a <b>private</b> GitHub Gist so every device shares it. Your token is typed in per device and never leaves it.</div>
+                <input type="password" id="cloudTokenInput" placeholder="Paste GitHub token here (gist scope)" autocomplete="off" />
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudConnect()">Connect</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudPush(false)">Save to cloud now</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudPull()">Load from cloud now</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudDisconnect()">Disconnect this device</button>
+                </div>
+                <div id="cloudStatus" class="small" style="margin-top: 10px; color: var(--text-secondary);">Cloud sync not set up on this device.</div>
+                <div class="small" style="margin-top: 6px; color: var(--text-secondary);">Note: if you edit on two devices at once, the last save wins.</div>
+            </div>
             <div id="settingsPending"></div>
             <div id="settingsForm"></div>
             <button class="btn btn-primary" style="margin-top: 16px;" onclick="saveSettings()">Save Changes</button>
@@ -899,9 +913,105 @@
             return s;
         }
 
-        function saveState() {
+        function saveStateLocal() {
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch (e) { console.error('Save failed', e); }
         }
+        function saveState() {
+            saveStateLocal();
+            scheduleCloudPush();
+        }
+        // =====================================================================
+        // CLOUD SYNC (multi-device) — appState mirrored to a private GitHub Gist.
+        // Token lives in this device's localStorage only; never in the page/gist.
+        // =====================================================================
+        const CLOUD_TOKEN_KEY = 'pt_gist_token';
+        const CLOUD_GIST_KEY = 'pt_gist_id';
+        const CLOUD_FILE = 'process-terminal-state.json';
+        let cloudReady = false;
+        let lastCloudPull = 0;
+        let pushTimer = null;
+        function cloudToken() { try { return localStorage.getItem(CLOUD_TOKEN_KEY) || ''; } catch (e) { return ''; } }
+        function cloudGistId() { try { return localStorage.getItem(CLOUD_GIST_KEY) || ''; } catch (e) { return ''; } }
+        function cloudStatus(msg, isErr) {
+            const el = $('cloudStatus');
+            if (el) { el.textContent = msg; el.style.color = isErr ? '#f87171' : 'var(--text-secondary)'; }
+        }
+        function cloudHeaders() {
+            return { 'Authorization': 'Bearer ' + cloudToken(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
+        }
+        async function cloudConnect() {
+            const tok = ($('cloudTokenInput').value || '').trim();
+            if (!tok) { cloudStatus('Paste your token first.', true); return; }
+            cloudStatus('Checking token…');
+            try {
+                const chk = await fetch('https://api.github.com/user', { headers: { 'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json' } });
+                if (!chk.ok) throw new Error('GitHub rejected the token — check it was copied fully and has the gist scope.');
+                localStorage.setItem(CLOUD_TOKEN_KEY, tok);
+                $('cloudTokenInput').value = '';
+                const g = await fetch('https://api.github.com/gists', {
+                    method: 'POST', headers: cloudHeaders(),
+                    body: JSON.stringify({ description: 'process-terminal state (private)', public: false,
+                        files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } })
+                });
+                if (!g.ok) throw new Error('Could not create the cloud storage.');
+                const gj = await g.json();
+                localStorage.setItem(CLOUD_GIST_KEY, gj.id);
+                lastCloudPull = Date.now();
+                cloudReady = true;
+                cloudStatus('Connected — cloud storage ready.');
+            } catch (e) { cloudStatus('Connect failed: ' + e.message, true); }
+        }
+        async function cloudPush(silent) {
+            const tok = cloudToken(), gid = cloudGistId();
+            if (!tok || !gid) return;
+            if (!silent) cloudStatus('Saving to cloud…');
+            try {
+                const r = await fetch('https://api.github.com/gists/' + gid, {
+                    method: 'PATCH', headers: cloudHeaders(),
+                    body: JSON.stringify({ files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } })
+                });
+                if (!r.ok) throw new Error('GitHub refused the save.');
+                lastCloudPull = Date.now();
+                cloudStatus('Saved to cloud — ' + new Date().toLocaleTimeString() + '.');
+            } catch (e) { if (!silent) cloudStatus('Cloud save failed: ' + e.message + ' (data is still safe on this device).', true); }
+        }
+        async function cloudPull() {
+            const tok = cloudToken(), gid = cloudGistId();
+            if (!tok || !gid) return false;
+            cloudStatus('Loading from cloud…');
+            try {
+                const r = await fetch('https://api.github.com/gists/' + gid, { headers: cloudHeaders() });
+                if (!r.ok) throw new Error('Could not read cloud storage.');
+                const gj = await r.json();
+                const f = gj.files && gj.files[CLOUD_FILE];
+                if (!f || !f.content) throw new Error('Cloud storage is empty.');
+                appState = normalizeState(JSON.parse(f.content));
+                saveStateLocal();
+                refreshAll();
+                lastCloudPull = Date.now();
+                cloudStatus('Loaded from cloud — ' + new Date().toLocaleTimeString() + '.');
+                return true;
+            } catch (e) { cloudStatus('Cloud load failed: ' + e.message + ' (using this device\u2019s data).', true); return false; }
+        }
+        function cloudDisconnect() {
+            try { localStorage.removeItem(CLOUD_TOKEN_KEY); localStorage.removeItem(CLOUD_GIST_KEY); } catch (e) {}
+            clearTimeout(pushTimer);
+            cloudStatus('Disconnected on this device. Your cloud data stays saved for your other devices.');
+        }
+        function scheduleCloudPush() {
+            if (!cloudReady || !cloudToken() || !cloudGistId()) return;
+            if (Date.now() - lastCloudPull < 10000) return; // never stomp a fresh pull
+            clearTimeout(pushTimer);
+            pushTimer = setTimeout(() => cloudPush(true), 4000);
+        }
+        // Auto-pull on startup (registered before the page's own init listener).
+        window.addEventListener('DOMContentLoaded', function () {
+            (async function () {
+                try { if (cloudToken() && cloudGistId()) await cloudPull(); } catch (e) {}
+                cloudReady = true;
+                if (cloudToken() && cloudGistId()) cloudStatus('Cloud sync on — data shared across devices.');
+            })();
+        });
 
         function handleInputSave() {
             const inputs = {};
