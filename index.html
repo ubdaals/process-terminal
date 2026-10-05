@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.7</span>
+            <span class="badge">PROCESS TERMINAL v3.8</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -538,7 +538,7 @@
                     <button class="btn btn-primary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudConnect()">Connect</button>
                     <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudPush(false)">Save to cloud now</button>
                     <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudPull()">Load from cloud now</button>
-                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudDisconnect()">Disconnect this device</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudDisconnect()">Disconnect this device</button><button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="cloudMakePublic()">Make cloud storage public</button>
                 </div>
                 <div id="cloudStatus" class="small" style="margin-top: 10px; color: var(--text-secondary);">Cloud sync not set up on this device.</div>
                 <div class="small" style="margin-top: 6px; color: var(--text-secondary);">Note: if you edit on two devices at once, the last save wins.</div>
@@ -1011,6 +1011,25 @@
             try { localStorage.removeItem(CLOUD_TOKEN_KEY); localStorage.removeItem(CLOUD_GIST_KEY); } catch (e) {}
             clearTimeout(pushTimer);
             cloudStatus('Disconnected on this device. Your cloud data stays saved for your other devices.');
+        }
+        async function cloudMakePublic() {
+            const tok = cloudToken(), gid = cloudGistId();
+            if (!tok || !gid) { cloudStatus('Connect first, then make it public.', true); return; }
+            if (!confirm('Make your cloud storage PUBLIC? Anyone with the link will be able to read your trade log. Your assistant needs this to audit your trading. Continue?')) return;
+            cloudStatus('Creating a public copy…');
+            try {
+                const r = await fetch('https://api.github.com/gists', {
+                    method: 'POST', headers: cloudHeaders(),
+                    body: JSON.stringify({ description: 'process-terminal state (public)', public: true,
+                        files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } })
+                });
+                if (!r.ok) throw new Error('GitHub refused.');
+                const gj = await r.json();
+                localStorage.setItem(CLOUD_GIST_KEY, gj.id);
+                lastCloudPull = Date.now();
+                cloudReady = true;
+                cloudStatus('Cloud storage is now PUBLIC. On your other device, open Settings and tap Connect once to join the public copy. The old secret copy can be deleted at gist.github.com.');
+            } catch (e) { cloudStatus('Failed: ' + e.message, true); }
         }
         function scheduleCloudPush() {
             if (!cloudReady || !cloudToken() || !cloudGistId()) return;
