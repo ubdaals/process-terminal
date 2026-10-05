@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stockbee Process Terminal v2.7.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Process Terminal">
+    <title>Stockbee Process Terminal v3.2</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -17,41 +20,50 @@
             --accent-yellow: #f59e0b;
             --accent-purple: #8b5cf6;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-primary); padding: 16px; max-width: 800px; margin: 0 auto; line-height: 1.5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-dark); color: var(--text-primary); padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); max-width: 800px; margin: 0 auto; line-height: 1.5; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
         .title { font-size: 1.15rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; }
         .badge { background: #1e3a8a; color: #93c5fd; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; }
         .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-        .card-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
         .metric-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; text-align: center; }
-        .metric-val { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+        .metric-val { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
         .metric-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; }
-        
+        .metric-sub { font-size: 0.68rem; color: var(--text-secondary); margin-top: 2px; }
         .posture-btn { padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: #1f2937; color: var(--text-primary); font-weight: 600; cursor: pointer; text-align: center; width: 100%; transition: all 0.2s; font-size: 0.8rem; }
         .posture-btn.active-yes { background: #065f46; border-color: var(--accent-green); color: #a7f3d0; }
         .posture-btn.active-sel { background: #78350f; border-color: var(--accent-yellow); color: #fde68a; }
         .posture-btn.active-no { background: #7f1d1d; border-color: var(--accent-red); color: #fecaca; }
-        
         .alert-banner { padding: 10px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; text-align: center; margin-bottom: 12px; border: 1px solid transparent; }
-        
+        .tone-blue { background: rgba(59,130,246,0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
+        .tone-green { background: rgba(16,185,129,0.12); border-color: var(--accent-green); color: var(--accent-green); }
+        .tone-yellow { background: rgba(245,158,11,0.12); border-color: var(--accent-yellow); color: var(--accent-yellow); }
+        .tone-red { background: rgba(239,68,68,0.15); border-color: var(--accent-red); color: var(--accent-red); }
+        .tone-purple { background: rgba(139,92,246,0.15); border-color: var(--accent-purple); color: var(--accent-purple); }
+        .left { text-align: left; }
+        .small { font-size: 0.75rem; font-weight: normal; }
+        .warn-list { font-size: 0.75rem; color: var(--accent-yellow); margin: -4px 0 12px 0; padding-left: 18px; }
+        .reason-list { font-size: 0.75rem; color: var(--text-secondary); margin: 6px 0 0 0; padding-left: 18px; font-weight: normal; }
         label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
         input, select, textarea { width: 100%; background: #1f2937; border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; }
         input:focus, select:focus { outline: none; border-color: var(--accent-blue); }
-        
+        select:disabled { opacity: 0.6; }
+
         .btn { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; }
         .btn-primary { background: var(--accent-blue); color: white; }
         .btn-success { background: var(--accent-green); color: white; margin-top: 8px; }
         .btn-secondary { background: #374151; color: var(--text-primary); margin-bottom: 8px; }
         .btn-danger { background: #7f1d1d; color: white; padding: 4px 8px; font-size: 0.75rem; width: auto; border: none; border-radius: 4px; cursor: pointer; }
         .btn-close-trade { background: #1e3a8a; color: #93c5fd; padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--accent-blue); cursor: pointer; }
-        
+
         .checkbox-group { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
-        .checkbox-item { display: flex; align-items: flex-start; gap: 8px; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; }
+        .checkbox-item { display: flex; align-items: flex-start; gap: 8px; background: rgba(255,255,255,0.02); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; margin-bottom: 0; color: var(--text-primary); }
         .checkbox-item input { width: auto; margin: 3px 0 0 0; }
-        
+
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
         th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
@@ -63,12 +75,25 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); padding: 16px; overflow-y: auto; z-index: 100; }
         .modal-content { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 650px; margin: 20px auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
-        
+        .rules-list { font-size: 0.8rem; margin-bottom: 16px; padding-left: 18px; color: var(--text-secondary); line-height: 1.6; }
+        .rules-list strong { color: var(--text-primary); }
+        .modal h4 { margin-bottom: 8px; }
+
         .target-pill { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; font-size: 0.75rem; text-align: center; }
         .target-pill strong { color: var(--accent-green); display: block; font-size: 0.9rem; }
-        
+
+        .dir-title { font-size: 0.85rem; font-weight: 700; margin: 14px 0 6px 0; }
+        .dir-list { margin: 0; padding-left: 18px; font-size: 0.8rem; color: #cbd5e1; }
+        .dir-list li { margin-bottom: 6px; line-height: 1.4; }
+        .dir-list li strong { color: var(--text-primary); }
+        .rules-box { background: rgba(15,23,42,0.6); border-left: 4px solid #38bdf8; padding: 12px 15px; border-radius: 0 6px 6px 0; margin-top: 14px; font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; }
+        .mini { width: 100%; font-size: 0.75rem; border-collapse: collapse; margin-bottom: 12px; }
+        .mini th, .mini td { white-space: normal; padding: 6px 8px; text-align: left; }
+
         @media (max-width: 600px) {
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .grid-5 { grid-template-columns: 1fr 1fr; }
+            input, select, textarea { font-size: 16px; }
         }
     </style>
 </head>
@@ -77,71 +102,159 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v2.7.1</span>
+            <span class="badge">PROCESS TERMINAL v3.2</span>
         </div>
-        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px;" onclick="toggleModal(true)">Rules & Sizing Manual</button>
+        <div style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
+            <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleModal(true)">Rules & Limits</button>
+        </div>
     </div>
+
+    <!-- STATE BANNER -->
+    <div id="stateBanner" class="alert-banner tone-yellow left">Loading...</div>
+    <ul id="stateWarnings" class="warn-list"></ul>
 
     <!-- RISK & STREAK HUD -->
     <div class="card">
         <div class="card-title">
             <span>Risk HUD & Process Streak</span>
-            <span id="hudRiskPct" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: none;">Baseline Risk: $60.00 (0.50% Equity)</span>
+            <span id="hudRiskPct" style="color: var(--accent-blue); font-size: 0.75rem; text-transform: none;">Next trade risk: $0.00</span>
         </div>
         <div class="grid-3">
             <div class="metric-box">
                 <div class="metric-label">Account Equity ($)</div>
-                <input type="number" id="sizerEquity" value="12000" step="500" oninput="handleInputSave(); calculateSize();" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem;">
+                <input type="number" id="sizerEquity" value="12000" step="100" inputmode="decimal" onchange="commitEquity()" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem; padding: 4px;">
+                <div class="metric-sub" id="equityUpdated">Not updated yet</div>
             </div>
             <div class="metric-box">
-                <div class="metric-label">Unlocked Base Tier</div>
-                <div class="metric-val" id="hudTier">Tier 3 ($60)</div>
+                <div class="metric-label">Peak Equity (High-Water Mark)</div>
+                <input type="number" id="peakEquity" value="12000" step="100" inputmode="decimal" onchange="commitPeak()" style="margin-bottom:0; text-align:center; font-weight:bold; background:transparent; border:none; color:var(--text-primary); font-size:1.1rem; padding: 4px;">
+                <div class="metric-sub">Enter your true all-time peak</div>
             </div>
             <div class="metric-box">
-                <div class="metric-label">10-Trade Streak</div>
-                <div class="metric-val" id="hudStreak" style="color: var(--accent-yellow)">0 / 10</div>
+                <div class="metric-label">Drawdown From Peak</div>
+                <div class="metric-val" id="hudDD">0.0%</div>
+                <div class="metric-sub" id="hudDDSub">Defense at 4% / lock at 8%</div>
+            </div>
+        </div>
+        <div class="grid-3" style="margin-top: 12px;">
+            <div class="metric-box">
+                <div class="metric-label">Unlocked Tier</div>
+                <div class="metric-val" id="hudTier">Tier 3 ($60 / 0.50%)</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Clean Streak</div>
+                <div class="metric-val" id="hudStreak" style="color: var(--accent-yellow)">0 / 8</div>
+                <div class="metric-sub" id="hudStreakSub">Closed, fully audited trades</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Open Positions</div>
+                <div class="metric-val" id="hudOpen">0 / 3</div>
+                <div class="metric-sub" id="hudOpenSub"></div>
+            </div>
+        </div>
+        <div class="grid-2" style="margin-top: 12px;">
+            <div class="metric-box">
+                <div class="metric-label">Realized Today / Daily Limit</div>
+                <div class="metric-val" id="hudToday">$0.00 / -$120</div>
+            </div>
+            <div class="metric-box">
+                <div class="metric-label">Realized This Week / Weekly Limit</div>
+                <div class="metric-val" id="hudWeek">$0.00 / -$300</div>
             </div>
         </div>
     </div>
 
-    <!-- SITUATIONAL AWARENESS (MTRT) -->
+    <!-- MARKET MONITOR (BREADTH) -> POSTURE -->
     <div class="card">
-        <div class="card-title">Situational Awareness (Pre-Market Posture)</div>
+        <div class="card-title">Situational Awareness (Stockbee Market Monitor)</div>
+        <div class="grid-5">
+            <div><label>Up 4%+ Today</label><input type="number" id="bUp4" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>Down 4%+ Today</label><input type="number" id="bDown4" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>5-Day Ratio</label><input type="number" id="bR5" step="0.01" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>10-Day Ratio</label><input type="number" id="bR10" step="0.01" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>T2108 (%)</label><input type="number" id="bT2108" step="0.01" inputmode="decimal" oninput="handleInputSave()"></div>
+        </div>
+        <div class="grid-5">
+            <div><label>T2108 3-5 Rows Ago</label><input type="number" id="bT2108Prev" step="0.01" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>Up 25%+ Quarter</label><input type="number" id="bUp25Q" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>Down 25%+ Quarter</label><input type="number" id="bDown25Q" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>Up 13%+ 34 Days</label><input type="number" id="bUp13" inputmode="decimal" oninput="handleInputSave()"></div>
+            <div><label>Down 13%+ 34 Days</label><input type="number" id="bDown13" inputmode="decimal" oninput="handleInputSave()"></div>
+        </div>
+        <button class="btn btn-primary" onclick="evaluateBreadth()">Evaluate Market Monitor & Set Posture</button>
+        <div id="breadthResult" class="alert-banner tone-yellow left" style="margin-top: 12px;">No Market Monitor row evaluated yet.</div>
+
+        <label style="margin-top: 4px; margin-bottom: 6px;">My Posture Ceiling (I can lower the posture, never raise it above what breadth allows)</label>
         <div class="grid-3">
             <button id="postureYes" class="posture-btn" onclick="setPosture('YES')">🟢 Breakouts Work (YES)</button>
             <button id="postureSel" class="posture-btn" onclick="setPosture('SELECTIVE')">🟡 Selective (HALF SIZE)</button>
             <button id="postureNo" class="posture-btn" onclick="setPosture('NO')">🔴 Breakouts Fail (NO)</button>
         </div>
+        <div id="effectivePostureLine" style="font-size: 0.8rem; margin-top: 10px; color: var(--text-secondary);"></div>
     </div>
 
-    <!-- EARNED SIZING RECOMMENDATION ENGINE & SIZER -->
+    <!-- EXECUTION DIRECTIVE -->
+    <div class="card">
+        <div class="card-title">Execution Directive (Setups for This Tape)</div>
+        <div id="directiveBadge" class="alert-banner tone-yellow">-</div>
+        <div id="directiveBlurb" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;"></div>
+        <div class="dir-title" style="color: var(--accent-green);">✓ SETUPS TO FOCUS ON</div>
+        <ul id="dirFocus" class="dir-list"></ul>
+        <div id="dirNeutralTitle" class="dir-title" style="color: var(--accent-yellow);">◦ ONLY THE BEST EXAMPLES (NEUTRAL)</div>
+        <ul id="dirNeutral" class="dir-list"></ul>
+        <div class="dir-title" style="color: var(--accent-red);">✕ SETUPS TO AVOID</div>
+        <ul id="dirAvoid" class="dir-list"></ul>
+        <div id="dirExtras" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 12px;"></div>
+        <div class="rules-box" id="dirSizing"></div>
+    </div>
+
+    <!-- EARNED SIZING ENGINE & SIZER -->
     <div class="card">
         <div class="card-title">Automated Position Sizer & Earned Sizing Engine</div>
-        
-        <div id="earnedRecommendation" class="alert-banner" style="background: rgba(245, 158, 11, 0.12); border-color: var(--accent-yellow); color: var(--accent-yellow); text-align: left;">
-            🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br>
-            <span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>Fixed $60 Dollar Risk</strong>. Build a clean 5-trade audit streak to unlock dynamic % equity compounding.</span>
+
+        <div id="earnedRecommendation" class="alert-banner tone-yellow left">Loading...</div>
+        <div id="riskBanner" class="alert-banner tone-blue">ACTIVE BASE RISK</div>
+
+        <div class="grid-2">
+            <div>
+                <label style="font-weight: bold; color: var(--accent-blue);">Sizing Model</label>
+                <select id="sizerRiskMode" onchange="handleInputSave(); calculateSize();">
+                    <option value="FIXED" selected>Fixed Dollar Tiers ($60 / $90 / $120)</option>
+                    <option value="DYNAMIC">Dynamic % Equity (Tier 2+ only)</option>
+                </select>
+            </div>
+            <div>
+                <label>Setup Conviction (resets to 1x every session)</label>
+                <select id="sizerConviction" onchange="handleInputSave(); calculateSize();">
+                    <option value="1x" selected>Standard Single (1x Risk)</option>
+                    <option value="2x">⚡ Home Run EP / Catalyst (2x Risk, must be earned)</option>
+                </select>
+            </div>
         </div>
 
         <div class="grid-2">
             <div>
-                <label style="font-weight: bold; color: var(--accent-blue);">Sizing Model & Calculation Engine</label>
-                <select id="sizerRiskMode" onchange="handleInputSave(); calculateSize();">
-                    <option value="FIXED" selected>Fixed Dollar Tiers ($60 / $90 / $120)</option>
-                    <option value="DYNAMIC">Dynamic % Equity Sizing (Earned % based on Streak)</option>
+                <label>Mental State Right Now (be honest)</label>
+                <select id="tradeMood" onchange="handleInputSave(); calculateSize();">
+                    <option value="CALM" selected>Calm / Focused</option>
+                    <option value="TIRED">Tired</option>
+                    <option value="FOMO">FOMO</option>
+                    <option value="FRUSTRATED">Frustrated</option>
+                    <option value="REVENGE">Revenge / Need to make it back</option>
                 </select>
             </div>
             <div>
-                <label>Setup Conviction & Sizing Mode</label>
-                <select id="sizerConviction" onchange="calculateSize(); handleInputSave();">
-                    <option value="1x">Standard Single (1x Risk)</option>
-                    <option value="2x" selected>⚡ Home Run EP / Catalyst (2x Heavy Risk)</option>
+                <label>Source Scan (where did this idea come from?)</label>
+                <select id="tradeSource" onchange="handleInputSave()">
+                    <option value="EP9M">EP9M Scan</option>
+                    <option value="DEP">DEP Candidates Watchlist</option>
+                    <option value="ANTICIPATION">Anticipation Scan (TT/TTT)</option>
+                    <option value="BURST">Momentum Burst Scanner</option>
+                    <option value="REVERSAL">Reversal Bullish Scan</option>
+                    <option value="OTHER">Other / Discretionary (fails the audit)</option>
                 </select>
             </div>
-        </div>
-
-        <div id="riskBanner" class="alert-banner" style="background: rgba(59, 130, 246, 0.1); border-color: var(--accent-blue); color: var(--accent-blue);">
-            ACTIVE BASE RISK: $60.00 (0.50% Account Risk - TIER 3)
         </div>
 
         <div class="grid-2">
@@ -166,14 +279,39 @@
             </div>
             <div>
                 <label>Entry Price ($)</label>
-                <input type="number" id="sizerEntry" placeholder="e.g. 100.00" step="0.01" oninput="handleInputSave(); calculateSize();">
+                <input type="number" id="sizerEntry" placeholder="e.g. 100.00" step="0.01" inputmode="decimal" oninput="handleInputSave(); calculateSize();">
             </div>
         </div>
 
         <div class="grid-2">
             <div>
-                <label>Technical Stop Loss Price ($)</label>
-                <input type="number" id="sizerStop" placeholder="e.g. 98.00" step="0.01" oninput="handleInputSave(); calculateSize();">
+                <label>Hold Plan</label>
+                <select id="sizerHold" onchange="handleInputSave(); calculateSize();">
+                    <option value="SWING" selected>Swing (carry overnight)</option>
+                    <option value="INTRADAY">Intraday only (flat before the close)</option>
+                </select>
+            </div>
+            <div>
+                <label>This Setup vs Today's Directive</label>
+                <div id="fitBadge" class="alert-banner tone-yellow" style="margin-bottom: 12px; padding: 9px;">-</div>
+            </div>
+        </div>
+        <div id="classStatus" class="small" style="margin-bottom: 12px; color: var(--text-secondary);"></div>
+
+        <div id="catalystBox" style="display:none;">
+            <label style="font-weight: bold; color: var(--accent-purple);">Catalyst Gate (all three must be true). Unlocks the larger EP / Hot-Market size class. 2x conviction also needs Tier 2+, posture YES, an EP-family setup, and no drawdown defense.</label>
+            <div class="checkbox-group" style="margin-top: 4px;">
+                <label class="checkbox-item"><input type="checkbox" id="cat1" onchange="calculateSize()"><span>Real catalyst confirmed in the news tab (not just a volume spike)</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="cat2" onchange="calculateSize()"><span>Neglected name with a clean Start-of-Swing off a base</span></label>
+                <label class="checkbox-item"><input type="checkbox" id="cat3" onchange="calculateSize()"><span>It came from one of my named scans with volume footprints present (EP9M, DEP, Burst or Anticipation)</span></label>
+            </div>
+            <div id="convictionStatus" class="small" style="margin-bottom: 12px;"></div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label>Technical Stop Loss Price ($) (above entry = short)</label>
+                <input type="number" id="sizerStop" placeholder="e.g. 98.00" step="0.01" inputmode="decimal" oninput="handleInputSave(); calculateSize();">
             </div>
             <div>
                 <label>Distance to Stop Loss</label>
@@ -182,11 +320,12 @@
         </div>
 
         <div class="metric-box" style="background: rgba(59, 130, 246, 0.08); border-color: var(--accent-blue); padding: 14px;">
-            <div class="metric-label">Calculated Share Size</div>
+            <div class="metric-label">Maximum Share Size (never exceed)</div>
             <div class="metric-val" id="sizerShares" style="color: var(--accent-blue); font-size: 1.4rem;">0 Shares</div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;" id="sizerDetails">
                 Value: $0.00 | Stop: 0.00% | Exposure: 0.0% Equity | Risk: $0.00 (0.00%)
             </div>
+            <ul id="sizerNotes" class="reason-list" style="text-align:left;"></ul>
         </div>
 
         <div style="margin-top: 14px;">
@@ -213,8 +352,8 @@
 
     <!-- DAILY TRADE LOG & AUDIT -->
     <div class="card">
-        <div class="card-title">Daily Trade Log & Execution Audit</div>
-        
+        <div class="card-title">Trade Log & Execution Audit</div>
+
         <div class="grid-2">
             <div>
                 <label>Ticker</label>
@@ -222,25 +361,25 @@
             </div>
             <div>
                 <label>Executed Shares</label>
-                <input type="number" id="tradeShares" placeholder="0" oninput="handleInputSave()">
+                <input type="number" id="tradeShares" placeholder="0" inputmode="numeric" oninput="handleInputSave()">
             </div>
         </div>
 
         <div class="grid-2">
             <div>
                 <label>Executed Entry ($)</label>
-                <input type="number" id="tradeEntry" placeholder="0.00" step="0.01" oninput="handleInputSave()">
+                <input type="number" id="tradeEntry" placeholder="0.00" step="0.01" inputmode="decimal" oninput="handleInputSave()">
             </div>
             <div>
                 <label>Executed Stop ($)</label>
-                <input type="number" id="tradeStop" placeholder="0.00" step="0.01" oninput="handleInputSave()">
+                <input type="number" id="tradeStop" placeholder="0.00" step="0.01" inputmode="decimal" oninput="handleInputSave()">
             </div>
         </div>
 
         <div class="grid-2">
             <div>
                 <label>Exit Price ($) <span style="color: var(--text-secondary); font-weight: normal;">(Leave blank for Open Swing)</span></label>
-                <input type="number" id="tradeExit" placeholder="Blank if active holding" step="0.01" oninput="handleInputSave()">
+                <input type="number" id="tradeExit" placeholder="Blank if active holding" step="0.01" inputmode="decimal" oninput="handleInputSave()">
             </div>
             <div>
                 <label>Market Regime SA Summary</label>
@@ -248,24 +387,23 @@
             </div>
         </div>
 
-        <div class="card-title" style="margin-top: 12px; font-size: 0.8rem;">Zero-Leeway 4-Point Process Audit</div>
+        <div class="card-title" style="margin-top: 12px; font-size: 0.8rem;">Zero-Leeway Process Audit</div>
         <div class="checkbox-group">
             <label class="checkbox-item">
                 <input type="checkbox" id="audit1">
-                <span>1. <strong>Situational Awareness Alignment:</strong> Trade sizing and posture were respected (e.g. no trades if NO posture; half risk if SELECTIVE posture)?</span>
+                <span>1. <strong>Situational Awareness Alignment:</strong> I respected posture and every lock (no trades if NO posture; half risk if SELECTIVE)?</span>
             </label>
             <label class="checkbox-item">
                 <input type="checkbox" id="audit2">
-                <span>2. <strong>Playbook Setup Quality:</strong> Setup strictly met Stockbee Playbook criteria (tight base, catalyst, volume surge, or clean ORB/pivot)?</span>
+                <span>2. <strong>Playbook Setup Quality:</strong> Setup strictly met Stockbee Playbook criteria and came from one of my named scans?</span>
             </label>
             <label class="checkbox-item">
                 <input type="checkbox" id="audit3">
-                <span>3. <strong>Pre-Calculated Sizing:</strong> Share count was calculated based on exact stop distance before hitting buy?</span>
+                <span>3. <strong>Pre-Calculated Sizing:</strong> Share count was calculated from the exact stop distance before buying and does not exceed the maximum shown above?</span>
             </label>
-            <label class="checkbox-item">
-                <input type="checkbox" id="audit4">
-                <span>4. <strong>Stop Loss Discipline:</strong> Initial stop loss was placed immediately and honored without widening, moving, or averaging down?</span>
-            </label>
+        </div>
+        <div class="small" style="color: var(--text-secondary); margin-bottom: 12px;">
+            Point 4 (<strong>Stop Loss Discipline</strong>) is asked when you close the trade. A trade only counts toward your streak once it is closed with all four points clean. The app also checks #1 and #3 automatically against your locks and maximum size.
         </div>
 
         <button class="btn btn-primary" onclick="saveTrade()">Log Trade & Save Session</button>
@@ -275,7 +413,7 @@
     <div class="card">
         <div class="card-title">Gemini Daily Update Generator</div>
         <button class="btn btn-success" onclick="generateGeminiUpdate()">Generate Gemini Review Text</button>
-        <textarea id="geminiOutput" rows="8" readonly style="margin-top: 12px; font-family: monospace; font-size: 0.75rem;" placeholder="Click button above to generate session review..."></textarea>
+        <textarea id="geminiOutput" rows="10" readonly style="margin-top: 12px; font-family: monospace; font-size: 0.75rem;" placeholder="Click button above to generate session review..."></textarea>
         <button class="btn btn-secondary" onclick="copyGeminiText()">Copy Text to Clipboard</button>
     </div>
 
@@ -284,11 +422,12 @@
         <div class="card-title">
             <span>Trade History Log</span>
             <div style="display: flex; gap: 6px;">
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;" onclick="exportData()">Backup Data</button>
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;" onclick="importData()">Restore Data</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem; margin-bottom: 0;" onclick="exportData()">Backup Data</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem; margin-bottom: 0;" onclick="importData()">Restore Data</button>
                 <button class="btn btn-danger" onclick="clearHistory()">Clear History</button>
             </div>
         </div>
+        <div id="scorecard" style="margin-bottom: 14px;"></div>
         <div class="table-container">
             <table>
                 <thead>
@@ -297,521 +436,1530 @@
                         <th>Ticker</th>
                         <th>Setup</th>
                         <th>Entry</th>
+                        <th>Size</th>
                         <th>Exit</th>
                         <th>Result</th>
                         <th>Audit</th>
+                        <th>State</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="historyTableBody">
-                    <tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>
+                    <tr><td colspan="10" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- RULES & SIZING MODAL -->
+    <!-- RULES & LIMITS MODAL -->
     <div id="rulesModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="color:var(--accent-blue);">Stockbee Heavy Sizing & Selling Rules</h3>
-                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px;" onclick="toggleModal(false)">X</button>
+                <h3 style="color:var(--accent-blue);">Rules, Limits & Sizing Manual</h3>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; margin-bottom: 0;" onclick="toggleModal(false)">X</button>
             </div>
-            
-            <h4 style="color:var(--accent-purple); margin-bottom:8px;">Stockbee EP Heavy Sizing Philosophy</h4>
-            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li><strong style="color:var(--text-primary)">2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk ($60) to 2x risk ($120) on true Episodic Pivots with strong catalysts.</li>
-                <li><strong style="color:var(--text-primary)">Intraday ORB Entries (Tight Stops):</strong> EPs entered on 1-min / 5-min ORB high breakout allow 0.5%–1.5% stop distance, driving position exposure to 33%–100% of portfolio value.</li>
-                <li><strong style="color:var(--text-primary)">Institutional Backing:</strong> Catalysts attract long-term fund buyers, reducing immediate failure rates and enabling aggressive capital concentration.</li>
+
+            <div id="rulesDynamic"></div>
+
+            <h4 style="color:var(--accent-purple);">Stockbee EP Heavy Sizing Philosophy</h4>
+            <ul class="rules-list">
+                <li><strong>2x Conviction Risk:</strong> Stockbee steps up from baseline 1x risk to 2x risk on true Episodic Pivots with strong catalysts. Here that is earned: Tier 2+, posture YES, all three catalyst checks, and never above the hard risk ceiling.</li>
+                <li><strong>Intraday ORB Entries (Tight Stops):</strong> EPs entered on 1-min / 5-min ORB high breakout allow 0.5%-1.5% stop distance, which pushes exposure up. The exposure cap per tier keeps that in check.</li>
+                <li><strong>Institutional Backing:</strong> Catalysts attract long-term fund buyers, reducing immediate failure rates.</li>
             </ul>
 
-            <h4 style="color:var(--accent-blue); margin-bottom:8px;">Stockbee Selling Rules (Selling Into Strength)</h4>
-            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li><strong style="color:var(--text-primary)">3-5 Day Rule:</strong> Most breakouts run for 3 to 5 days before pulling back. Sell 1/3 to 1/2 of your position into strength on Days 3–5.</li>
-                <li><strong style="color:var(--text-primary)">Pay Yourself First:</strong> Lock in partial profits at +1R to +2R to bring your effective risk on the trade to zero.</li>
-                <li><strong style="color:var(--text-primary)">EP Runner Rule:</strong> For Episodic Pivots, trail the remaining piece using the 10 EMA or Previous Day's Low to capture 20%–50%+ home run moves.</li>
+            <h4 style="color:var(--accent-blue);">Stockbee Selling Rules (Selling Into Strength)</h4>
+            <ul class="rules-list">
+                <li><strong>3-5 Day Rule:</strong> Most breakouts run for 3 to 5 days before pulling back. Sell 1/3 to 1/2 of your position into strength on Days 3-5.</li>
+                <li><strong>Pay Yourself First:</strong> Lock in partial profits at +1R to +2R to bring your effective risk on the trade to zero.</li>
+                <li><strong>EP Runner Rule:</strong> For Episodic Pivots, trail the remaining piece using the 10 EMA or Previous Day's Low to capture 20%-50%+ home run moves.</li>
             </ul>
 
-            <h4 style="color:var(--accent-yellow); margin-bottom:8px;">12 Always Rules</h4>
-            <ol style="font-size:0.8rem; margin-bottom:16px; padding-left:20px; color:var(--text-secondary); line-height: 1.6;">
+            <h4 style="color:var(--accent-yellow);">12 Always Rules</h4>
+            <ol class="rules-list">
                 <li>Always trade for magnitude, not duration.</li>
                 <li>Always operate with Situational Awareness.</li>
-                <li>Always buy on the first day of breakout — earlier the better.</li>
+                <li>Always buy on the first day of breakout - earlier the better.</li>
                 <li>Always look for tightness or a negative day in the pre-breakout.</li>
                 <li>Always look for young setups and moves.</li>
                 <li>Always look for a catalyst.</li>
                 <li>Always think: "who is going to buy after me, and whom can I sell this to?"</li>
                 <li>Always sell into strength and move stops to protect profits.</li>
                 <li>Always look for the opportunity to size up on fund-quality plays.</li>
-                <li>Always develop new edges and variations — build a larger playbook.</li>
+                <li>Always develop new edges and variations - build a larger playbook.</li>
                 <li>Always study 20% and 50% moves.</li>
-                <li>Edge turnaround and rotation — edges decay; be ready to rotate to what's working now.</li>
+                <li>Edge turnaround and rotation - edges decay; be ready to rotate to what's working now.</li>
             </ol>
+        </div>
+    </div>
 
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
-
-            <h4 style="color:var(--accent-green); margin-bottom:8px;">Earned Sizing Framework</h4>
-            <ul style="font-size:0.8rem; margin-bottom:16px; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li><strong style="color:var(--text-primary)">Tier 3 (0-4 Streak):</strong> Fixed $60 risk mode recommended. Rebuild discipline without dollar anxiety.</li>
-                <li><strong style="color:var(--text-primary)">Tier 2 (5-9 Streak):</strong> Unlocks 0.50% Dynamic Equity Sizing. Earned position scaling.</li>
-                <li><strong style="color:var(--text-primary)">Tier 1 (10+ Streak):</strong> Unlocks 1.00% Full Geometric Compounding Mode.</li>
-            </ul>
-
-            <h4 style="color:var(--accent-purple); margin-bottom:8px;">Zero-Leeway 4-Point Audit</h4>
-            <ul style="font-size:0.8rem; padding-left:16px; color:var(--text-secondary); line-height:1.6;">
-                <li>1. Situational Awareness / Posture Aligned</li>
-                <li>2. Playbook Setup Quality Met</li>
-                <li>3. Share Count Pre-Calculated</li>
-                <li>4. Hard Stop Loss Placed & Honored</li>
-            </ul>
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color:var(--accent-blue);">Settings (Weekend Review)</h3>
+                <button class="btn btn-secondary" style="width: auto; padding: 4px 8px; margin-bottom: 0;" onclick="toggleSettings(false)">X</button>
+            </div>
+            <div id="settingsNote" class="small" style="color: var(--text-secondary); margin-bottom: 12px;"></div>
+            <div id="settingsPending"></div>
+            <div id="settingsForm"></div>
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="saveSettings()">Save Changes</button>
+            <button class="btn btn-secondary" style="margin-top: 8px;" onclick="renderSettings(true)">Load Defaults Into Form (then Save)</button>
         </div>
     </div>
 
     <script>
-        let appState = {
-            streak: 0,
-            tier: 'Tier 3 ($60)',
-            posture: 'YES',
-            inputs: {},
-            history: []
+        // =====================================================================
+        // CONFIG - DEFAULTS (conservative, chosen for a drawdown rebuild).
+        // Every rule number lives here. Edit this block to tune the system.
+        // Rules are meant to be changed only on a weekend review, never mid-session.
+        // =====================================================================
+        const CONFIG = {
+            tiers: {
+                3: { fixed: 60,  pct: 0.50 },
+                2: { fixed: 90,  pct: 0.75 },
+                1: { fixed: 120, pct: 1.00 }
+            },
+            // Both conditions must be true: clean closed-trade streak AND calendar time since streak began.
+            unlock: {
+                tier2: { trades: 8,  weeks: 2 },
+                tier1: { trades: 20, weeks: 6 }
+            },
+            conviction2xMult: 2,
+            maxRiskPctCeiling: 1.0,      // hard ceiling on risk per trade, % of equity (your plan: 0.5% to 1.0%)
+            selectiveMult: 0.5,          // risk multiplier in a SELECTIVE tape
+            selectiveCapMult: 0.5,       // position-size cap multiplier in a SELECTIVE tape
+            oversizeTolerance: 0.05,     // 5% rounding tolerance before an executed size counts as oversized
+            // Max % of equity in ONE position, by size class and tier (from your risk management plan):
+            //   OVERNIGHT = Anticipation / Reversal (~10%), SINGLE = Singles (20-25%),
+            //   HOT = catalyst breakout in a hot market (60-70%), EP = Episodic Pivot (max allocation)
+            caps: {
+                OVERNIGHT: { 3: 10, 2: 10, 1: 10 },
+                SINGLE:    { 3: 20, 2: 25, 1: 25 },
+                HOT:       { 3: 25, 2: 40, 1: 65 },
+                EP:        { 3: 33, 2: 60, 1: 100 }
+            },
+            // Overnight carry limit: a position held overnight may not lose more than this % of equity
+            // if it gaps assumedGapPct against you (stops are not guaranteed through a gap).
+            gap: { assumedGapPct: 10, maxGapLossPct: { 3: 2.5, 2: 4, 1: 6 } },
+            // Total open exposure cap (% of equity) by posture and tier. No margin.
+            totalExposure: {
+                YES:       { 3: 60, 2: 100, 1: 100 },
+                SELECTIVE: { 3: 30, 2: 50,  1: 60 }
+            },
+            drawdown: {
+                defensePct: 4,           // >= this from peak: forced Tier 3, fixed dollars, 1x only
+                hardLockPct: 8,          // >= this from peak: no new trades for hardLockDays
+                hardLockDays: 5
+            },
+            limits: {
+                dailyLossPct:  { 3: 1.0, 2: 1.5, 1: 2.0 },   // realized loss limit per day, % of equity
+                weeklyLossPct: { 3: 2.5, 2: 3.5, 1: 5.0 },   // realized loss limit per week (Mon-Sun)
+                maxNewTradesPerDay: 3,
+                maxOpenPositions: 3
+            },
+            enforceDirective: true,      // logging a setup on today's AVOID list counts as a minor violation
+            defenseFocusOnly: true,      // in drawdown defense, NEUTRAL setups are treated as AVOID
+            breadthFreshHours: 20,       // a Market Monitor evaluation is trusted for this long
+            stalePostureCeiling: 'SELECTIVE',   // posture cap if the Market Monitor row is stale or missing
+            extremeOversoldT2108: 10,
+            extremeOversoldPosture: 'SELECTIVE' // playbook calls T2108 < 10 a bullish special case; capped at half size by default
         };
 
-        function init() {
-            const saved = localStorage.getItem('stockbee_terminal_state');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    appState.streak = typeof parsed.streak === 'number' ? parsed.streak : 0;
-                    appState.tier = getTierNameFromStreak(appState.streak);
-                    appState.posture = parsed.posture || 'YES';
-                    appState.inputs = parsed.inputs || {};
-                    appState.history = Array.isArray(parsed.history) ? parsed.history : [];
-                } catch(e) {
-                    console.error("Failed to parse saved state", e);
-                }
+        const STORAGE_KEY = 'stockbee_terminal_state';
+        const DAY = 86400000;
+        const RANK = { NO: 0, SELECTIVE: 1, YES: 2 };
+        const FROM_RANK = ['NO', 'SELECTIVE', 'YES'];
+        const EP_FAMILY = ['Episodic Pivot (EP)', 'EP-9M (Volume Confirmed)', 'Delayed EP (DEP)'];
+        const TILT_STATES = ['FOMO', 'FRUSTRATED', 'REVENGE'];
+        const INPUT_IDS = ['sizerRiskMode', 'sizerConviction', 'sizerHold', 'sizerEntry', 'sizerStop', 'tradeTicker', 'tradeSetup',
+            'tradeSource', 'tradeMood', 'tradeEntry', 'tradeStop', 'tradeShares', 'tradeExit', 'tradeMarketNote',
+            'bUp4', 'bDown4', 'bR5', 'bR10', 'bT2108', 'bT2108Prev', 'bUp25Q', 'bDown25Q', 'bUp13', 'bDown13'];
+
+        const SETUPS = {
+            EP:    'Episodic Pivot (EP)',
+            EP9M:  'EP-9M (Volume Confirmed)',
+            DEP:   'Delayed EP (DEP)',
+            MB:    'Momentum Burst (MB)',
+            CONT:  'Continuation (2LYNCH)',
+            CONS:  'Consolidation Breakout',
+            ANT:   'Anticipation (TT/TTT)',
+            REV:   'Reversal Bullish',
+            BB:    'Bottom Bounce',
+            SHORT: 'Weak Structure Short (NIAGRA3)'
+        };
+        const KEY_BY_SETUP = {};
+        Object.keys(SETUPS).forEach(k => { KEY_BY_SETUP[SETUPS[k]] = k; });
+        const SETUP_CLASS = { EP: 'EP', EP9M: 'EP', DEP: 'EP', MB: 'SINGLE', CONT: 'SINGLE', CONS: 'SINGLE', ANT: 'OVERNIGHT', REV: 'OVERNIGHT', BB: 'SINGLE', SHORT: 'SINGLE' };
+        const HOT_ELIGIBLE = ['MB', 'CONT', 'CONS'];
+        const GATE_SETUPS = ['EP', 'EP9M', 'DEP', 'MB', 'CONT', 'CONS'];
+        const CLASS_LABEL = { OVERNIGHT: 'Overnight (Anticipation / Reversal)', SINGLE: 'Singles', HOT: 'Hot-Market catalyst breakout', EP: 'Episodic Pivot' };
+
+        // Setup guidance by market regime, built from the Stockbee playbook rules. Edit freely after a weekend review.
+        const DIRECTIVES = {
+            HOT: {
+                label: 'GREEN: BREAKOUTS WORK (PRESS THE TAPE)', tone: 'green',
+                blurb: 'Fast and slow breadth agree. This is the tape to press: trade for magnitude, buy day-1 breakouts, size up on fund-quality plays.',
+                focus: [
+                    ['EP', 'Catalyst plus a clean Start-of-Swing off a base: the home-run engine.'],
+                    ['EP9M', 'Volume footprints in a neglected name. Confirm the catalyst in the news tab.'],
+                    ['DEP', 'The gapped EP9M that pulled back in an orderly way: enter on the next valid Start-of-Swing, never the gap.'],
+                    ['MB', 'Day-1 range-expansion bars, strongest when the name also showed on a recent Anticipation scan.'],
+                    ['ANT', 'Buy tightness (TT/TTT, falling volume) before the breakout, with the overnight size cap.'],
+                    ['CONS', 'Tight base with catalyst and volume. This setup works best in a strong tape.'],
+                    ['CONT', '2nd-leg continuations only. The 3rd leg usually does not work.']
+                ],
+                neutral: [
+                    ['REV', 'Works, but you are not fighting anything here. Take fewer; the edge is in breakouts.'],
+                    ['BB', 'Little to bounce from in a strong tape. Only clean institutional-quality examples.']
+                ],
+                avoid: [
+                    ['SHORT', 'Relief-bounce shorts fight a rising tape.']
+                ],
+                extras: ['Buy on the first day of the breakout, sell into strength on Days 3-5, and trail the runner.']
+            },
+            IMPROVING: {
+                label: 'SELECTIVE: IMPROVING (SHIFT IN PROGRESS)', tone: 'yellow',
+                blurb: 'The fast measures are turning up but the slow one has not confirmed. One better read is not a trend: best setups only, half size.',
+                focus: [
+                    ['EP', 'Catalyst-driven names depend least on the tape. Cleanest examples only.'],
+                    ['EP9M', 'Confirmed catalyst with real volume footprints.'],
+                    ['DEP', 'Orderly pullbacks that held key levels.'],
+                    ['BB', 'Bullish engulfing off an oversold low on institutional-quality names: the end-of-correction setup.'],
+                    ['REV', 'Hammer or dragonfly doji after a decline on fund-owned names.']
+                ],
+                neutral: [
+                    ['MB', 'Only the strongest range expansions, ideally also on a recent Anticipation hit.'],
+                    ['ANT', 'Few, tight, institutional-quality names only.']
+                ],
+                avoid: [
+                    ['CONS', 'Consolidation breakouts work best late in a bull market, not in early repair.'],
+                    ['CONT', 'Needs persistent buying. The 3rd leg usually fails.'],
+                    ['SHORT', 'Shorting into an improving tape.']
+                ],
+                extras: ['Keep the trade count small until both ratios are back above 1.0.']
+            },
+            MIXED: {
+                label: 'SELECTIVE: MIXED BREADTH', tone: 'yellow',
+                blurb: 'Breadth disagrees with itself. Best setups only, half size, small trade count until the measures agree.',
+                focus: [
+                    ['EP', 'Catalyst-driven names are the least dependent on the tape.'],
+                    ['EP9M', 'Confirmed catalyst with real volume footprints.'],
+                    ['DEP', 'Only orderly pullbacks off a confirmed EP9M.']
+                ],
+                neutral: [
+                    ['MB', 'Only the strongest range expansions.'],
+                    ['ANT', 'Few, tight, institutional-quality names only.'],
+                    ['REV', 'Institutional-quality names only.'],
+                    ['BB', 'Only a clean end-of-correction pattern.']
+                ],
+                avoid: [
+                    ['CONS', 'Consolidation breakouts need a strong tape.'],
+                    ['CONT', 'Needs persistent buying. The 3rd leg usually fails.'],
+                    ['SHORT', 'No confirmed downtrend yet.']
+                ],
+                extras: ['If both ratios cross above 1.0 with T2108 rising, the call upgrades. If they fall further, it becomes NO.']
+            },
+            FADING: {
+                label: 'SELECTIVE: FADING (LEANING TOWARD NO)', tone: 'yellow',
+                blurb: 'Fast measures have rolled over while the slow one still looks fine: a shift in progress. If the 10-day ratio drops below 1.0 the call becomes NO.',
+                focus: [
+                    ['EP', 'Only the cleanest catalysts. They can decouple from a weakening tape.'],
+                    ['EP9M', 'Confirmed catalyst with real volume footprints.']
+                ],
+                neutral: [
+                    ['DEP', 'Only if the pullback is truly orderly and the name is institutional quality.'],
+                    ['REV', 'Institutional names only. Mean-reversion is the one pattern that benefits from weakness.'],
+                    ['SHORT', 'Relief-bounce shorts start to matter here. Advanced: only if already in your plan, at Tier 3 size.']
+                ],
+                avoid: [
+                    ['MB', 'Breakouts start failing in a fading tape.'],
+                    ['ANT', 'Tight bases break down instead of expanding.'],
+                    ['CONS', 'Consolidation breakouts need a strong tape.'],
+                    ['CONT', 'Continuations fail first when momentum fades.'],
+                    ['BB', 'Catching a falling knife until breadth stabilizes.']
+                ],
+                extras: ['Tighten up: take profits into strength early and keep the trade count low.']
+            },
+            NO: {
+                label: 'RED: BREAKOUTS FAIL (STAND ASIDE)', tone: 'red',
+                blurb: 'Both ratios are below 1.0 and every measure agrees. Playbook: stand aside and protect capital. The terminal locks new trades.',
+                focus: [],
+                neutral: [],
+                avoid: Object.keys(SETUPS).map(k => [k, k === 'SHORT'
+                    ? 'The one setup built for a falling tape, but the terminal keeps trading locked on NO. Decide in a weekend review whether to ever allow it.'
+                    : 'Stand aside. This tape is not paying long setups.']),
+                extras: ['Cash is a position. Doing nothing here is the edge.', 'Use the time: build the DEP Candidates watchlist from recent EP9M hits, review your journal, and study 20% and 50% movers.']
+            },
+            OVERSOLD: {
+                label: 'EXTREME OVERSOLD: BOUNCE WATCH (T2108 < 10)', tone: 'blue',
+                blurb: 'Playbook special case: capitulation lows are where bounces start. Capped at half size.',
+                focus: [
+                    ['BB', 'Bullish engulfing off the low on institutional-quality names.'],
+                    ['REV', 'Hammer or dragonfly doji on fund-owned names.'],
+                    ['EP', 'Catalyst names holding up while everything else is washed out.'],
+                    ['EP9M', 'Volume footprints in a name that decouples from the panic.']
+                ],
+                neutral: [
+                    ['DEP', 'Only orderly pullbacks.'],
+                    ['MB', 'Only the strongest range expansions.'],
+                    ['ANT', 'Few, tight names only.']
+                ],
+                avoid: [
+                    ['CONS', 'Breakout setups need a healthy tape.'],
+                    ['CONT', 'Continuation needs persistent buying.'],
+                    ['SHORT', 'Do not short panic lows.']
+                ],
+                extras: ['Take profits quickly into strength. A bounce from a washout can fade fast.']
             }
+        };
 
-            if (appState.inputs) {
-                for (const key in appState.inputs) {
-                    const el = document.getElementById(key);
-                    if (el) el.value = appState.inputs[key];
-                }
-            }
-
-            updateHUD();
-            setPosture(appState.posture || 'YES');
-            syncConvictionWithSetup();
-            renderHistory();
-        }
-
-        function handleInputSave() {
-            appState.inputs = {
-                sizerEquity: document.getElementById('sizerEquity').value,
-                sizerRiskMode: document.getElementById('sizerRiskMode').value,
-                sizerConviction: document.getElementById('sizerConviction').value,
-                sizerEntry: document.getElementById('sizerEntry').value,
-                sizerStop: document.getElementById('sizerStop').value,
-                tradeTicker: document.getElementById('tradeTicker').value,
-                tradeSetup: document.getElementById('tradeSetup').value,
-                tradeEntry: document.getElementById('tradeEntry').value,
-                tradeStop: document.getElementById('tradeStop').value,
-                tradeShares: document.getElementById('tradeShares').value,
-                tradeExit: document.getElementById('tradeExit').value,
-                tradeMarketNote: document.getElementById('tradeMarketNote').value
+        const LOOSEN_DELAY_DAYS = 7;   // changes that make rules looser take effect after this many days
+        const DEFAULT_CONFIG = JSON.parse(JSON.stringify(CONFIG));
+        const SCHEMA = [];
+        const SCHEMA_BY_PATH = {};
+        (function buildSchema() {
+            // looser: +1 means a higher value loosens the rule, -1 means a higher value tightens it.
+            // ladder/rank: values must not decrease from rank 0 to the highest rank.
+            const add = function (path, label, group, min, max, step, looser, ladder, rank) {
+                const f = { path: path, label: label, group: group, min: min, max: max, step: step, looser: looser, ladder: ladder || null, rank: rank || 0 };
+                SCHEMA.push(f); SCHEMA_BY_PATH[path] = f;
             };
-            saveState();
+            const T = [3, 2, 1];
+            T.forEach((t, i) => add('tiers.' + t + '.fixed', 'Tier ' + t + ' fixed risk ($)', 'Risk per trade', 10, 2000, 5, 1, 'fixed', i));
+            T.forEach((t, i) => add('tiers.' + t + '.pct', 'Tier ' + t + ' risk (% of equity)', 'Risk per trade', 0.1, 2, 0.05, 1, 'pct', i));
+            add('maxRiskPctCeiling', 'Hard risk ceiling (% of equity)', 'Risk per trade', 0.25, 2, 0.05, 1);
+            [['OVERNIGHT', 'Overnight'], ['SINGLE', 'Singles'], ['HOT', 'Hot-market catalyst'], ['EP', 'Episodic Pivot']].forEach(c => {
+                T.forEach((t, i) => add('caps.' + c[0] + '.' + t, c[1] + ' cap, Tier ' + t + ' (% of equity)', 'Position caps', 1, 100, 1, 1, 'caps' + c[0], i));
+            });
+            T.forEach((t, i) => add('gap.maxGapLossPct.' + t, 'Max overnight gap loss, Tier ' + t + ' (% of equity)', 'Overnight carry', 0.5, 20, 0.5, 1, 'gap', i));
+            add('gap.assumedGapPct', 'Assumed gap size (%)', 'Overnight carry', 3, 30, 1, -1);
+            ['YES', 'SELECTIVE'].forEach(pp => {
+                T.forEach((t, i) => add('totalExposure.' + pp + '.' + t, 'Total exposure, ' + (pp === 'YES' ? 'YES tape' : 'Selective tape') + ', Tier ' + t + ' (%)', 'Total open exposure (no margin)', 5, 100, 5, 1, 'tot' + pp, i));
+            });
+            T.forEach((t, i) => add('limits.dailyLossPct.' + t, 'Daily loss limit, Tier ' + t + ' (% of equity)', 'Loss limits and frequency', 0.25, 5, 0.25, 1, 'daily', i));
+            T.forEach((t, i) => add('limits.weeklyLossPct.' + t, 'Weekly loss limit, Tier ' + t + ' (% of equity)', 'Loss limits and frequency', 0.5, 10, 0.25, 1, 'weekly', i));
+            add('limits.maxNewTradesPerDay', 'Max new trades per day', 'Loss limits and frequency', 1, 10, 1, 1);
+            add('limits.maxOpenPositions', 'Max open positions', 'Loss limits and frequency', 1, 10, 1, 1);
+            add('drawdown.defensePct', 'Drawdown defense starts (% below peak)', 'Drawdown governor', 1, 20, 0.5, 1);
+            add('drawdown.hardLockPct', 'Drawdown lock starts (% below peak)', 'Drawdown governor', 2, 30, 0.5, 1);
+            add('drawdown.hardLockDays', 'Drawdown lock length (days)', 'Drawdown governor', 1, 30, 1, -1);
+            add('unlock.tier2.trades', 'Tier 2 needs (clean closed trades)', 'Streak unlocks', 3, 100, 1, -1, 'unlockTrades', 0);
+            add('unlock.tier1.trades', 'Tier 1 needs (clean closed trades)', 'Streak unlocks', 3, 200, 1, -1, 'unlockTrades', 1);
+            add('unlock.tier2.weeks', 'Tier 2 needs (weeks)', 'Streak unlocks', 1, 52, 1, -1, 'unlockWeeks', 0);
+            add('unlock.tier1.weeks', 'Tier 1 needs (weeks)', 'Streak unlocks', 1, 104, 1, -1, 'unlockWeeks', 1);
+        })();
+
+        function getPath(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+        function setPath(o, path, v) {
+            const ks = path.split('.'); const last = ks.pop();
+            ks.reduce((a, k) => a[k], o)[last] = v;
         }
 
-        function syncConvictionWithSetup() {
-            const setup = document.getElementById('tradeSetup').value;
-            const convictionSel = document.getElementById('sizerConviction');
-            if (setup.includes("EP")) {
-                convictionSel.value = "2x";
-            } else {
-                convictionSel.value = "1x";
+        let appState = defaultState();
+
+        // ---------- small helpers ----------
+        const $ = id => document.getElementById(id);
+        const val = id => ($(id) ? $(id).value : '');
+        const num = id => parseFloat(val(id)) || 0;
+        const numOrNaN = id => { const v = val(id).trim(); return v === '' ? NaN : parseFloat(v); };
+        const checked = id => !!($(id) && $(id).checked);
+        const money = n => (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+        const money0 = n => '$' + Math.round(n).toLocaleString();
+        function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function dayKey(ts) {
+            const d = new Date(ts);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function weekKey(ts) {
+            const d = new Date(ts); d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+            return dayKey(d.getTime());
+        }
+        function setTone(el, tone) {
+            el.className = el.className.replace(/\btone-\w+\b/g, '').trim() + ' tone-' + tone;
+        }
+
+        // ---------- state ----------
+        function defaultState() {
+            return {
+                version: 3, equity: 12000, peak: 0, peakConfirmed: false, equityUpdated: null,
+                streak: 0, streakStart: null, posture: 'YES', breadth: null,
+                ddLock: { until: 0, armed: true }, dayLock: '', inputs: {}, history: [],
+                config: { overrides: {}, pending: [] }
+            };
+        }
+
+        function normalizeTrade(t) {
+            const o = Object.assign({}, t);
+            o.entry = Number(o.entry) || 0;
+            o.stop = Number(o.stop) || 0;
+            o.shares = Number(o.shares) || 0;
+            o.exit = o.exit ? Number(o.exit) : null;
+            o.direction = o.direction === -1 ? -1 : (o.direction === 1 ? 1 : ((o.stop > o.entry && o.stop > 0) ? -1 : 1));
+            o.status = o.status === 'CLOSED' ? 'CLOSED' : 'OPEN';
+            o.passAudit = !!o.passAudit;
+            o.prePass = typeof o.prePass === 'boolean' ? o.prePass : o.passAudit;
+            o.preFails = Array.isArray(o.preFails) ? o.preFails : [];
+            o.source = o.source || '-';
+            o.mood = o.mood || '-';
+            o.fit = o.fit || '-';
+            o.regime = o.regime || '-';
+            o.holdPlan = o.holdPlan === 'INTRADAY' ? 'INTRADAY' : 'SWING';
+            o.setup = o.setup || '-';
+            o.ticker = o.ticker || 'N/A';
+            o.closedAt = o.closedAt ? Number(o.closedAt) : null;
+            o.id = Number(o.id) || Date.now();
+            o.initialShares = Number(o.initialShares) > 0 ? Number(o.initialShares) : o.shares;
+            o.initialStop = Number(o.initialStop) > 0 ? Number(o.initialStop) : o.stop;
+            o.trims = Array.isArray(o.trims) ? o.trims.map(x => ({ ts: Number(x.ts) || 0, shares: Number(x.shares) || 0, price: Number(x.price) || 0, pnl: Number(x.pnl) || 0 })) : [];
+            o.stopMoves = Array.isArray(o.stopMoves) ? o.stopMoves : [];
+            if (o.status === 'CLOSED' && o.exit) {
+                const m = tradeMetrics(o);
+                if (typeof o.pnl !== 'number') o.pnl = m.pnl;
+                if (typeof o.rNum !== 'number') o.rNum = m.rNum;
+                if (!o.rMult) o.rMult = fmtR(o.rNum);
             }
+            return o;
         }
 
-        function getBaseRiskFromStreak(streak) {
-            if (streak >= 10) return 120;
-            if (streak >= 5) return 90;
-            return 60;
-        }
-
-        function getEarnedRiskPct(streak) {
-            if (streak >= 10) return 1.00;
-            if (streak >= 5) return 0.50;
-            return 0.50;
-        }
-
-        function getTierNameFromStreak(streak) {
-            const risk = getBaseRiskFromStreak(streak);
-            if (streak >= 10) return `Tier 1 ($${risk})`;
-            if (streak >= 5) return `Tier 2 ($${risk})`;
-            return `Tier 3 ($${risk})`;
-        }
-
-        function updateEarnedRecommendation() {
-            const streak = appState.streak;
-            const recBox = document.getElementById('earnedRecommendation');
-            if (!recBox) return;
-
-            if (streak < 5) {
-                recBox.style.background = 'rgba(245, 158, 11, 0.12)';
-                recBox.style.borderColor = 'var(--accent-yellow)';
-                recBox.style.color = 'var(--accent-yellow)';
-                recBox.innerHTML = `🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>Fixed $60 Dollar Risk</strong>. Build a clean 5-trade audit streak to unlock dynamic % equity compounding.</span>`;
-            } else if (streak < 10) {
-                recBox.style.background = 'rgba(16, 185, 129, 0.12)';
-                recBox.style.borderColor = 'var(--accent-green)';
-                recBox.style.color = 'var(--accent-green)';
-                recBox.innerHTML = `⚡ <strong>EARNED SIZING STATUS: Tier 2 (Process Proven)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>UNLOCKED 0.50% Dynamic % Sizing</strong>. You earned position scaling! You can switch mode to Dynamic % Sizing.</span>`;
-            } else {
-                recBox.style.background = 'rgba(139, 92, 246, 0.15)';
-                recBox.style.borderColor = 'var(--accent-purple)';
-                recBox.style.color = 'var(--accent-purple)';
-                recBox.innerHTML = `🚀 <strong>EARNED SIZING STATUS: Tier 1 (Mastery Phase)</strong><br><span style="font-weight:normal; font-size:0.75rem;">Recommendation: <strong>FULL COMPOUNDING UNLOCKED (1.00% Dynamic Risk)</strong>. Institutional execution streak active!</span>`;
+        function normalizeState(p) {
+            const s = defaultState();
+            if (!p || typeof p !== 'object') return s;
+            if (typeof p.streak === 'number' && p.streak >= 0) s.streak = Math.floor(p.streak);
+            s.streakStart = typeof p.streakStart === 'number' ? p.streakStart : null;
+            if (s.streak > 0 && !s.streakStart) s.streakStart = Date.now();   // legacy streaks restart their clock
+            if (['YES', 'SELECTIVE', 'NO'].indexOf(p.posture) >= 0) s.posture = p.posture;
+            const eq = parseFloat(p.equity) || parseFloat(p.inputs && p.inputs.sizerEquity);
+            if (eq > 0) s.equity = eq;
+            if (parseFloat(p.peak) > 0) s.peak = parseFloat(p.peak);
+            s.peakConfirmed = !!p.peakConfirmed;
+            s.equityUpdated = p.equityUpdated || null;
+            if (p.breadth && typeof p.breadth === 'object' && p.breadth.ts) s.breadth = p.breadth;
+            if (p.ddLock && typeof p.ddLock === 'object') s.ddLock = { until: Number(p.ddLock.until) || 0, armed: p.ddLock.armed !== false };
+            s.dayLock = typeof p.dayLock === 'string' ? p.dayLock : '';
+            s.inputs = (p.inputs && typeof p.inputs === 'object') ? p.inputs : {};
+            if (p.config && typeof p.config === 'object') {
+                const ov = {};
+                if (p.config.overrides && typeof p.config.overrides === 'object') {
+                    Object.keys(p.config.overrides).forEach(k => { const v = Number(p.config.overrides[k]); if (SCHEMA_BY_PATH[k] && isFinite(v)) ov[k] = v; });
+                }
+                const pend = Array.isArray(p.config.pending)
+                    ? p.config.pending.filter(x => x && SCHEMA_BY_PATH[x.path] && isFinite(Number(x.value)) && Number(x.effectiveAt) > 0)
+                        .map(x => ({ path: x.path, value: Number(x.value), effectiveAt: Number(x.effectiveAt) }))
+                    : [];
+                s.config = { overrides: ov, pending: pend };
             }
-        }
-
-        function getEffectiveRisk() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
-            const streak = appState.streak;
-            const mode = document.getElementById('sizerRiskMode') ? document.getElementById('sizerRiskMode').value : 'FIXED';
-            const convictionMult = (document.getElementById('sizerConviction') && document.getElementById('sizerConviction').value === '2x') ? 2 : 1;
-
-            let baseRisk = 0;
-            if (mode === 'FIXED') {
-                baseRisk = getBaseRiskFromStreak(streak);
-            } else {
-                const pct = getEarnedRiskPct(streak);
-                baseRisk = equity * (pct / 100);
-            }
-
-            let risk = baseRisk * convictionMult;
-
-            if (appState.posture === 'SELECTIVE') return risk * 0.5;
-            if (appState.posture === 'NO') return 0;
-            return risk;
+            s.history = Array.isArray(p.history) ? p.history.map(normalizeTrade) : [];
+            return s;
         }
 
         function saveState() {
-            localStorage.setItem('stockbee_terminal_state', JSON.stringify(appState));
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch (e) { console.error('Save failed', e); }
         }
 
-        function updateHUD() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
-            const mode = document.getElementById('sizerRiskMode') ? document.getElementById('sizerRiskMode').value : 'FIXED';
-            
-            let baseRisk = 0;
-            if (mode === 'FIXED') {
-                baseRisk = getBaseRiskFromStreak(appState.streak);
+        function handleInputSave() {
+            const inputs = {};
+            INPUT_IDS.forEach(id => { if ($(id)) inputs[id] = $(id).value; });
+            appState.inputs = inputs;
+            saveState();
+        }
+
+        function restoreInputs() {
+            for (const key in appState.inputs) {
+                if (INPUT_IDS.indexOf(key) >= 0 && $(key)) $(key).value = appState.inputs[key];
+            }
+        }
+
+        // ---------- trade math ----------
+        function tradeMetrics(t) {
+            const dir = t.direction === -1 ? -1 : 1;
+            const stop0 = t.initialStop || t.stop;
+            const sh0 = t.initialShares || t.shares;
+            const riskPS = Math.abs(t.entry - stop0);
+            const trimPnl = (t.trims || []).reduce((a, x) => a + (x.pnl || 0), 0);
+            const finalPnl = dir * (t.exit - t.entry) * t.shares;
+            const pnl = trimPnl + finalPnl;
+            const rNum = (riskPS > 0 && sh0 > 0) ? pnl / (riskPS * sh0) : 0;
+            return { rNum: rNum, pnl: pnl, finalPnl: finalPnl };
+        }
+        function fmtR(r) { return (r >= 0 ? '+' : '') + r.toFixed(2) + 'R'; }
+
+        function pnlEvents(t) {
+            const evs = (t.trims || []).map(x => ({ ts: x.ts, pnl: x.pnl || 0 }));
+            if (t.status === 'CLOSED' && t.closedAt) {
+                const fp = typeof t.finalPnl === 'number' ? t.finalPnl : ((Number(t.pnl) || 0) - evs.reduce((a, e) => a + e.pnl, 0));
+                evs.push({ ts: t.closedAt, pnl: fp });
+            }
+            return evs;
+        }
+        function realizedPnl(filterFn) {
+            let sum = 0;
+            appState.history.forEach(t => pnlEvents(t).forEach(e => { if (filterFn(e.ts)) sum += e.pnl; }));
+            return sum;
+        }
+        const pnlToday = () => realizedPnl(ts => dayKey(ts) === dayKey(Date.now()));
+        const pnlWeek = () => realizedPnl(ts => weekKey(ts) === weekKey(Date.now()));
+        const openCount = () => appState.history.filter(t => t.status === 'OPEN').length;
+        const newTradesToday = () => appState.history.filter(t => dayKey(t.id) === dayKey(Date.now())).length;
+        const dailyLimit = () => appState.equity * CONFIG.limits.dailyLossPct[effectiveTier()] / 100;
+        const weeklyLimit = () => appState.equity * CONFIG.limits.weeklyLossPct[effectiveTier()] / 100;
+
+        // ---------- drawdown governor ----------
+        function ddPct() {
+            return appState.peak > 0 ? Math.max(0, (appState.peak - appState.equity) / appState.peak * 100) : 0;
+        }
+        const inDefense = () => ddPct() >= CONFIG.drawdown.defensePct;
+        const hardLockActive = () => appState.ddLock.until > Date.now();
+
+        function evalDrawdownLock(isFirstSetup) {
+            const dd = ddPct();
+            if (dd < CONFIG.drawdown.hardLockPct) {
+                appState.ddLock.armed = true;
+            } else if (appState.ddLock.armed) {
+                appState.ddLock.armed = false;
+                if (!isFirstSetup) appState.ddLock.until = Date.now() + CONFIG.drawdown.hardLockDays * DAY;
+            }
+        }
+
+        function commitEquity() {
+            const e = parseFloat(val('sizerEquity'));
+            if (!(e > 0)) { $('sizerEquity').value = appState.equity; return; }
+            appState.equity = e;
+            appState.equityUpdated = Date.now();
+            if (e > appState.peak) appState.peak = e;
+            evalDrawdownLock(!appState.peakConfirmed);   // no fresh locks off a placeholder peak
+            $('peakEquity').value = appState.peak;
+            saveState();
+            refreshAll();
+        }
+
+        function commitPeak() {
+            const p = parseFloat(val('peakEquity'));
+            if (!(p > 0)) { $('peakEquity').value = appState.peak; return; }
+            const first = !appState.peakConfirmed;
+            appState.peak = Math.max(p, appState.equity);
+            appState.peakConfirmed = true;
+            evalDrawdownLock(first);   // first-time setup never triggers a fresh lock; defense mode still applies
+            $('peakEquity').value = appState.peak;
+            saveState();
+            refreshAll();
+        }
+
+        // ---------- streak / tiers ----------
+        function streakWeeks() {
+            return appState.streakStart ? Math.floor((Date.now() - appState.streakStart) / (7 * DAY)) : 0;
+        }
+        function tierFromStreak() {
+            const s = appState.streak, w = streakWeeks(), u = CONFIG.unlock;
+            if (s >= u.tier1.trades && w >= u.tier1.weeks) return 1;
+            if (s >= u.tier2.trades && w >= u.tier2.weeks) return 2;
+            return 3;
+        }
+        function effectiveTier() {
+            if (hardLockActive() || inDefense()) return 3;
+            return tierFromStreak();
+        }
+        function streakProgressText() {
+            const nat = tierFromStreak(), s = appState.streak, w = streakWeeks();
+            if (nat === 1) return s + ' clean / ' + w + ' wks (max tier)';
+            const next = nat === 2 ? CONFIG.unlock.tier1 : CONFIG.unlock.tier2;
+            return s + '/' + next.trades + ' trades, ' + w + '/' + next.weeks + ' wks';
+        }
+
+        function applySevereViolation() {
+            appState.streak = 0;
+            appState.streakStart = null;
+            appState.dayLock = dayKey(Date.now());
+        }
+        function applyMinorViolation() {
+            if (tierFromStreak() === 1) {
+                appState.streak = CONFIG.unlock.tier2.trades;
+                appState.streakStart = Date.now() - CONFIG.unlock.tier2.weeks * 7 * DAY;
             } else {
-                baseRisk = equity * (getEarnedRiskPct(appState.streak) / 100);
+                appState.streak = 0;
+                appState.streakStart = null;
+            }
+        }
+
+        // ---------- posture / breadth ----------
+        const breadthFresh = () => !!(appState.breadth && (Date.now() - appState.breadth.ts) < CONFIG.breadthFreshHours * 3600000);
+
+        function effectivePosture() {
+            const ceiling = breadthFresh() ? appState.breadth.posture : CONFIG.stalePostureCeiling;
+            return FROM_RANK[Math.min(RANK[appState.posture], RANK[ceiling])];
+        }
+
+        function evaluateBreadth() {
+            const up4 = numOrNaN('bUp4'), down4 = numOrNaN('bDown4'), r5 = numOrNaN('bR5'), r10 = numOrNaN('bR10'), t = numOrNaN('bT2108');
+            if ([up4, down4, r5, r10, t].some(isNaN)) {
+                alert('Fill in Up 4%+, Down 4%+, 5-Day Ratio, 10-Day Ratio and T2108 first. (The 3-5 rows ago and 25%/13% fields are optional but sharpen the call.)');
+                return;
+            }
+            const prev = numOrNaN('bT2108Prev');
+            const u25 = numOrNaN('bUp25Q'), d25 = numOrNaN('bDown25Q'), u13 = numOrNaN('bUp13'), d13 = numOrNaN('bDown13');
+
+            const bothAbove = r5 > 1 && r10 > 1;
+            const bothBelow = r5 < 1 && r10 < 1;
+            const trend = isNaN(prev) ? 'unknown' : (t > prev ? 'rising' : (t < prev ? 'falling' : 'flat'));
+            const rawBull = up4 > down4, rawBear = down4 > up4;
+            const haveStruct = ![u25, d25, u13, d13].some(isNaN);
+            const structBear = haveStruct && d25 > u25 && d13 > u13;
+
+            const reasons = [];
+            reasons.push('Ratios: 5-day ' + r5 + ', 10-day ' + r10 + (bothAbove ? ' (both above 1.0)' : (bothBelow ? ' (both below 1.0)' : ' (split / mixed)')));
+            reasons.push('T2108 ' + t + '% (' + (trend === 'unknown' ? 'trend not entered' : trend) + ')');
+            reasons.push('Raw 4% count: ' + up4 + ' up vs ' + down4 + ' down (' + (rawBull ? 'bullish' : (rawBear ? 'bearish' : 'even')) + ')');
+            if (haveStruct) reasons.push('Structure: quarter ' + (d25 > u25 ? 'bearish' : 'bullish') + ', 34-day ' + (d13 > u13 ? 'bearish' : 'bullish'));
+
+            let posture, regime;
+            if (t < CONFIG.extremeOversoldT2108) {
+                posture = CONFIG.extremeOversoldPosture; regime = 'OVERSOLD';
+                reasons.push('T2108 under ' + CONFIG.extremeOversoldT2108 + ': extreme-oversold special case, capped at ' + posture);
+            } else if (bothBelow && rawBear && trend !== 'rising') {
+                posture = 'NO'; regime = 'NO';
+                reasons.push('All fast and slow measures agree bearish: breakouts fail, stand aside');
+            } else if (bothAbove && rawBull && (trend === 'rising' || t >= 50)) {
+                posture = 'YES'; regime = 'HOT';
+                reasons.push('Ratios, raw count and T2108 agree bullish: breakouts work');
+                if (structBear) {
+                    posture = 'SELECTIVE'; regime = 'MIXED';
+                    reasons.push('Downgraded: quarter and 34-day structure are both bearish');
+                }
+            } else {
+                posture = 'SELECTIVE';
+                const fading = (r5 < 1 && r10 >= 1) || (rawBear && r5 < r10 && trend === 'falling');
+                const improving = (r5 >= 1 && r10 < 1) || (rawBull && r5 > r10 && trend === 'rising');
+                if (fading) {
+                    regime = 'FADING';
+                    reasons.push('Fast measures have rolled over while the slow one has not: a shift in progress, leaning toward NO. Best setups only, half size');
+                } else if (improving) {
+                    regime = 'IMPROVING';
+                    reasons.push('Fast measures are turning up but the slow one has not confirmed: best setups only, half size');
+                } else {
+                    regime = 'MIXED';
+                    reasons.push('Measures disagree: best setups only, half size');
+                }
             }
 
-            const baseRiskPct = equity > 0 ? ((baseRisk / equity) * 100).toFixed(2) : "0.00";
-
-            document.getElementById('hudStreak').innerText = appState.streak + " / 10";
-            document.getElementById('hudTier').innerText = appState.tier || "Tier 3 ($60)";
-            document.getElementById('hudRiskPct').innerText = `Base Risk: $${baseRisk.toFixed(2)} (${baseRiskPct}% Equity)`;
-            
-            updateEarnedRecommendation();
+            appState.breadth = { ts: Date.now(), posture: posture, regime: regime, reasons: reasons };
+            handleInputSave();
+            saveState();
+            refreshAll();
         }
 
-        function setPosture(posture) {
-            appState.posture = posture;
-            document.getElementById('postureYes').className = 'posture-btn' + (posture === 'YES' ? ' active-yes' : '');
-            document.getElementById('postureSel').className = 'posture-btn' + (posture === 'SELECTIVE' ? ' active-sel' : '');
-            document.getElementById('postureNo').className = 'posture-btn' + (posture === 'NO' ? ' active-no' : '');
-            
-            updateHUD();
-            calculateSize();
+        function setPosture(p) {
+            appState.posture = p;
             saveState();
+            refreshAll();
+        }
+
+        // ---------- regime, fit, size classes ----------
+        function currentRegime() {
+            const eff = effectivePosture();
+            if (eff === 'NO') return { key: 'NO', stale: !breadthFresh() };
+            if (!breadthFresh()) return { key: 'MIXED', stale: true };
+            const b = appState.breadth;
+            let key = b.regime || (b.posture === 'YES' ? 'HOT' : (b.posture === 'NO' ? 'NO' : 'MIXED'));
+            if (key === 'HOT' && RANK[eff] < RANK.YES) key = 'MIXED';
+            return { key: key, stale: false };
+        }
+
+        function getSetupFit(setupName) {
+            const rg = currentRegime();
+            const d = DIRECTIVES[rg.key];
+            const key = KEY_BY_SETUP[setupName];
+            let fit = 'NEUTRAL', demoted = false;
+            if (d.focus.some(x => x[0] === key)) fit = 'FOCUS';
+            else if (d.avoid.some(x => x[0] === key)) fit = 'AVOID';
+            if (fit === 'NEUTRAL' && CONFIG.defenseFocusOnly && (hardLockActive() || inDefense())) { fit = 'AVOID'; demoted = true; }
+            return { fit: fit, regime: rg.key, demoted: demoted };
+        }
+
+        function sizeClassFor(setupName, posture, tier, defense) {
+            const key = KEY_BY_SETUP[setupName];
+            const base = SETUP_CLASS[key] || 'SINGLE';
+            const gateOK = checked('cat1') && checked('cat2') && checked('cat3');
+            if (base === 'EP') return gateOK ? 'EP' : 'SINGLE';
+            if (HOT_ELIGIBLE.indexOf(key) >= 0) return (gateOK && posture === 'YES' && !defense) ? 'HOT' : 'SINGLE';
+            return base;
+        }
+
+        function capFor(cls, tier, posture, hold) {
+            if (posture === 'NO') return 0;
+            let cap = CONFIG.caps[cls][tier];
+            if (hold !== 'INTRADAY') {
+                const carry = CONFIG.gap.maxGapLossPct[tier] / CONFIG.gap.assumedGapPct * 100;
+                cap = Math.min(cap, carry);
+            }
+            if (posture === 'SELECTIVE') cap *= CONFIG.selectiveCapMult;
+            return cap;
+        }
+
+        function totalCapFor(posture, tier) {
+            if (posture === 'NO') return 0;
+            return CONFIG.totalExposure[posture][tier];
+        }
+
+        function openExposurePct() {
+            if (!(appState.equity > 0)) return 0;
+            const v = appState.history.filter(t => t.status === 'OPEN').reduce((a, t) => a + t.shares * t.entry, 0);
+            return v / appState.equity * 100;
+        }
+
+        function renderDirective() {
+            const rg = currentRegime();
+            const d = DIRECTIVES[rg.key];
+            const defense = hardLockActive() || inDefense();
+            const badge = $('directiveBadge');
+            setTone(badge, rg.stale ? 'yellow' : d.tone);
+            badge.textContent = d.label + (rg.stale ? ' (NO FRESH MARKET MONITOR READ)' : '');
+            $('directiveBlurb').textContent = (rg.stale ? 'Evaluate the Market Monitor above for today\'s directive. Until then you are capped at ' + CONFIG.stalePostureCeiling + ' and shown mixed-tape guidance. ' : '') + d.blurb;
+
+            let neutralArr = d.neutral, avoidArr = d.avoid;
+            if (defense && CONFIG.defenseFocusOnly) {
+                avoidArr = avoidArr.concat(neutralArr.map(x => [x[0], 'Drawdown defense: focus setups only. ' + x[1]]));
+                neutralArr = [];
+            }
+            const li = arr => arr.length
+                ? arr.map(x => '<li><strong>' + esc(SETUPS[x[0]]) + ':</strong> ' + esc(x[1]) + '</li>').join('')
+                : '<li style="list-style:none; margin-left:-18px; color: var(--text-secondary);">None in this tape.</li>';
+            $('dirFocus').innerHTML = li(d.focus);
+            $('dirNeutral').innerHTML = li(neutralArr);
+            $('dirNeutralTitle').style.display = neutralArr.length ? 'block' : 'none';
+            $('dirNeutral').style.display = neutralArr.length ? 'block' : 'none';
+            $('dirAvoid').innerHTML = li(avoidArr);
+
+            const extras = d.extras.slice();
+            if (defense) extras.push('Drawdown defense is on: Tier 3 fixed dollars, 1x only, and only FOCUS setups until you recover.');
+            $('dirExtras').innerHTML = extras.map(x => '<div style="margin-bottom:4px;">• ' + esc(x) + '</div>').join('');
+
+            const eff = effectivePosture(), tier = effectiveTier(), t = CONFIG.tiers[tier], eq = appState.equity;
+            const hold = val('sizerHold') || 'SWING';
+            let html;
+            if (eff === 'NO') {
+                html = '<strong>Sizing & Risk:</strong> Locked. Zero new risk while posture is NO.';
+            } else {
+                const baseRisk = Math.min(t.fixed, eq * t.pct / 100) * (eff === 'SELECTIVE' ? CONFIG.selectiveMult : 1);
+                const cap = c => capFor(c, tier, eff, hold).toFixed(0) + '%';
+                const total = totalCapFor(eff, tier);
+                html = '<strong>Sizing & Risk:</strong> Tier ' + tier + ' risk per trade is ' + money(baseRisk) + ' (' + (eq > 0 ? (baseRisk / eq * 100).toFixed(2) : '0.00') + '% of equity)' +
+                    (eff === 'SELECTIVE' ? ', already halved for this tape' : '') + '. ' +
+                    'Max size per position (' + (hold === 'INTRADAY' ? 'intraday' : 'swing carry') + '): Overnight ' + cap('OVERNIGHT') + ', Singles ' + cap('SINGLE') +
+                    ((eff === 'YES' && !defense) ? ', Catalyst breakout ' + cap('HOT') : '') + ', EP with catalyst gate ' + cap('EP') + '. ' +
+                    'Total open exposure: ' + openExposurePct().toFixed(0) + '% of a ' + total + '% cap.';
+            }
+            $('dirSizing').innerHTML = html;
+        }
+
+        function renderScorecard() {
+            const el = $('scorecard');
+            if (!el) return;
+            const rows = ['FOCUS', 'NEUTRAL', 'AVOID'].map(f => {
+                const ts = appState.history.filter(t => t.status === 'CLOSED' && t.fit === f);
+                const n = ts.length;
+                const wins = ts.filter(t => t.rNum > 0).length;
+                const avg = n ? ts.reduce((a, t) => a + (t.rNum || 0), 0) / n : 0;
+                return '<tr><td>' + f + '</td><td>' + n + '</td><td>' + (n ? Math.round(wins / n * 100) + '%' : '-') + '</td><td>' + (n ? fmtR(avg) : '-') + '</td></tr>';
+            }).join('');
+            el.innerHTML = '<div class="card-title" style="margin-bottom:6px;">Directive Scorecard (does following the directive raise your win rate?)</div>' +
+                '<table class="mini"><thead><tr><th>Setup was</th><th>Closed trades</th><th>Win rate</th><th>Avg R</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+                '<div class="small" style="color: var(--text-secondary);">Do not trust a row until it has roughly 30 closed trades. If FOCUS does not beat the others over that sample, change the directive, not your sizing.</div>';
+        }
+
+        // ---------- locks & risk ----------
+        function isTilt() { return TILT_STATES.indexOf(val('tradeMood')) >= 0; }
+
+        function getLockReason() {
+            if (hardLockActive()) return 'Drawdown lock until ' + new Date(appState.ddLock.until).toLocaleDateString() + ' (' + CONFIG.drawdown.hardLockPct + '%+ below peak). No new trades.';
+            if (appState.dayLock === dayKey(Date.now())) return 'Day locked after a severe process violation. Done for today.';
+            if (effectivePosture() === 'NO') return 'Market posture is NO. Stand aside.';
+            if (pnlToday() <= -dailyLimit()) return 'Daily loss limit reached (' + money(pnlToday()) + '). Done for today.';
+            if (pnlWeek() <= -weeklyLimit()) return 'Weekly loss limit reached (' + money(pnlWeek()) + '). Done for the week.';
+            if (newTradesToday() >= CONFIG.limits.maxNewTradesPerDay) return 'Max ' + CONFIG.limits.maxNewTradesPerDay + ' new trades per day reached.';
+            if (openCount() >= CONFIG.limits.maxOpenPositions) return 'Max ' + CONFIG.limits.maxOpenPositions + ' open positions reached. Close one first.';
+            return null;
+        }
+
+        function convictionStatus() {
+            const requested = val('sizerConviction') === '2x';
+            const reasons = [];
+            const tier = effectiveTier();
+            if (tier > 2) reasons.push('needs Tier 2+');
+            if (effectivePosture() !== 'YES') reasons.push('needs posture YES');
+            if (inDefense()) reasons.push('drawdown defense is active');
+            if (EP_FAMILY.indexOf(val('tradeSetup')) < 0) reasons.push('setup is not in the EP family');
+            if (!(checked('cat1') && checked('cat2') && checked('cat3'))) reasons.push('catalyst checks incomplete');
+            return { requested: requested, eligible: reasons.length === 0, active: requested && reasons.length === 0, reasons: reasons };
+        }
+
+        function computeRisk() {
+            const equity = appState.equity;
+            const posture = effectivePosture();
+            const tier = effectiveTier();
+            const t = CONFIG.tiers[tier];
+            const notes = [];
+
+            const modeSel = val('sizerRiskMode');
+            const mode = (modeSel === 'DYNAMIC' && tier <= 2) ? 'DYNAMIC' : 'FIXED';
+            if (modeSel === 'DYNAMIC' && tier > 2) notes.push('Dynamic % is locked at Tier 3 / drawdown defense: using fixed dollar risk.');
+
+            const pctRisk = equity * t.pct / 100;
+            const base = mode === 'DYNAMIC' ? pctRisk : Math.min(t.fixed, pctRisk);
+
+            const conv = convictionStatus();
+            let risk = base;
+            if (conv.active) { risk *= CONFIG.conviction2xMult; notes.push('2x conviction active.'); }
+            else if (conv.requested) notes.push('2x not available: ' + conv.reasons.join(', ') + '. Sizing at 1x.');
+
+            if (posture === 'SELECTIVE') { risk *= CONFIG.selectiveMult; notes.push('Selective posture: risk x' + CONFIG.selectiveMult + '.'); }
+
+            const ceiling = equity * CONFIG.maxRiskPctCeiling / 100;
+            if (risk > ceiling) { risk = ceiling; notes.push('Capped by hard risk ceiling (' + CONFIG.maxRiskPctCeiling + '% of equity).'); }
+
+            const remDaily = Math.max(0, dailyLimit() + Math.min(0, pnlToday()));
+            if (risk > remDaily) { risk = remDaily; notes.push('Capped by remaining daily loss budget (' + money(remDaily) + ').'); }
+            const remWeekly = Math.max(0, weeklyLimit() + Math.min(0, pnlWeek()));
+            if (risk > remWeekly) { risk = remWeekly; notes.push('Capped by remaining weekly loss budget (' + money(remWeekly) + ').'); }
+
+            const lock = getLockReason();
+            if (lock) { risk = 0; }
+            if (isTilt()) { risk = 0; notes.push('You tagged a tilt state (' + val('tradeMood') + '). Step away, then re-tag honestly. Sizer is off.'); }
+
+            const hold = val('sizerHold') || 'SWING';
+            const defense = hardLockActive() || inDefense();
+            const cls = sizeClassFor(val('tradeSetup'), posture, tier, defense);
+            const classCap = capFor(cls, tier, posture, hold);
+            const totalCap = totalCapFor(posture, tier);
+            const openPct = openExposurePct();
+            const remaining = Math.max(0, totalCap - openPct);
+            const capPct = Math.min(classCap, remaining);
+            return { risk: risk, base: base, tier: tier, mode: mode, posture: posture, lock: lock, notes: notes, conviction: conv,
+                     cls: cls, classCap: classCap, totalCap: totalCap, openPct: openPct, remaining: remaining, capPct: capPct, hold: hold };
+        }
+
+        function maxSharesFor(entry, stop, r) {
+            const dist = Math.abs(entry - stop);
+            if (!(dist > 0) || !(entry > 0) || r.risk <= 0) return 0;
+            const byRisk = Math.floor(r.risk / dist);
+            const byCap = Math.floor((r.capPct / 100) * appState.equity / entry);
+            return Math.max(0, Math.min(byRisk, byCap));
+        }
+
+        // ---------- rendering ----------
+        function updateHUD() {
+            const tier = effectiveTier();
+            const t = CONFIG.tiers[tier];
+            const dd = ddPct();
+            const eq = appState.equity;
+
+            $('hudDD').textContent = dd.toFixed(1) + '%';
+            $('hudDD').style.color = dd >= CONFIG.drawdown.hardLockPct ? 'var(--accent-red)' : (dd >= CONFIG.drawdown.defensePct ? 'var(--accent-yellow)' : 'var(--accent-green)');
+            $('hudDDSub').textContent = 'Defense at ' + CONFIG.drawdown.defensePct + '% / lock at ' + CONFIG.drawdown.hardLockPct + '%';
+            $('hudTier').textContent = 'Tier ' + tier + ' ($' + t.fixed + ' / ' + t.pct.toFixed(2) + '%)' + ((hardLockActive() || inDefense()) ? ' DEFENSE' : '');
+            $('hudStreak').textContent = streakProgressText();
+            $('hudOpen').textContent = openCount() + ' / ' + CONFIG.limits.maxOpenPositions;
+            const riskAtStops = appState.history.filter(t => t.status === 'OPEN').reduce((a, t) => a + Math.max(0, t.direction * (t.entry - t.stop)) * t.shares, 0);
+            $('hudOpenSub').textContent = 'Exposure ' + openExposurePct().toFixed(0) + '% | Risk at stops ' + money(riskAtStops);
+            $('hudToday').textContent = money(pnlToday()) + ' / -' + money0(dailyLimit());
+            $('hudWeek').textContent = money(pnlWeek()) + ' / -' + money0(weeklyLimit());
+            $('equityUpdated').textContent = appState.equityUpdated ? 'Updated ' + new Date(appState.equityUpdated).toLocaleDateString() : 'Not updated yet';
+
+            const r = computeRisk();
+            $('hudRiskPct').textContent = 'Next trade risk: ' + money(r.risk) + ' (' + (eq > 0 ? (r.risk / eq * 100).toFixed(2) : '0.00') + '%)';
+
+            // state banner
+            const banner = $('stateBanner');
+            const lock = getLockReason();
+            const post = effectivePosture();
+            if (lock) {
+                setTone(banner, 'red'); banner.textContent = 'LOCKED: ' + lock;
+            } else if (hardLockActive() || inDefense()) {
+                setTone(banner, 'yellow'); banner.textContent = 'DEFENSE MODE: ' + dd.toFixed(1) + '% below peak. Tier 3 fixed dollars, 1x only, until drawdown is under ' + CONFIG.drawdown.defensePct + '%.';
+            } else if (post === 'SELECTIVE') {
+                setTone(banner, 'yellow'); banner.textContent = 'SELECTIVE: best setups only, half size. Tier ' + tier + ' base risk applies.';
+            } else {
+                setTone(banner, 'green'); banner.textContent = 'CLEAR TO TRADE THE PLAN: Tier ' + tier + '. Same formula every trade.';
+            }
+
+            const warns = [];
+            if (!appState.peakConfirmed) warns.push('Set your true peak equity (high-water mark) so the drawdown governor works.');
+            if (!breadthFresh()) warns.push('No fresh Market Monitor read (older than ' + CONFIG.breadthFreshHours + 'h). Posture is capped at ' + CONFIG.stalePostureCeiling + ' until you evaluate one.');
+            if (!appState.equityUpdated || dayKey(appState.equityUpdated) !== dayKey(Date.now())) warns.push('Equity was not updated today. Drawdown and limits are only as accurate as this number.');
+            const overdue = appState.history.filter(t => t.status === 'OPEN' && t.holdPlan === 'INTRADAY' && dayKey(t.id) !== dayKey(Date.now()));
+            if (appState.config.pending.length) warns.push('Settings change(s) pending: the earliest takes effect ' + new Date(Math.min.apply(null, appState.config.pending.map(x => x.effectiveAt))).toLocaleDateString() + '.');
+            if (overdue.length) warns.push('Intraday trade still open from a prior day: ' + overdue.map(t => t.ticker).join(', ') + '. Close it and log it honestly (it counts as a violation).');
+            $('stateWarnings').innerHTML = warns.map(w => '<li>' + esc(w) + '</li>').join('');
+
+            updateEarnedRecommendation(tier, dd);
+        }
+
+        function updateEarnedRecommendation(tier, dd) {
+            const box = $('earnedRecommendation');
+            const nat = tierFromStreak();
+            let html, tone;
+            if (hardLockActive() || inDefense()) {
+                tone = 'red';
+                html = '🛡️ <strong>EARNED SIZING STATUS: Defense (drawdown ' + dd.toFixed(1) + '%)</strong><br><span class="small">Forced to Tier 3 fixed dollars and 1x. Your streak is preserved (' + streakProgressText() + ') but cannot raise risk until drawdown is under ' + CONFIG.drawdown.defensePct + '%.</span>';
+            } else if (tier === 3) {
+                tone = 'yellow';
+                html = '🔒 <strong>EARNED SIZING STATUS: Tier 3 (Focus Phase)</strong><br><span class="small">Fixed $' + CONFIG.tiers[3].fixed + ' risk. Progress to Tier 2: ' + streakProgressText() + ' (both trades and weeks must be met).</span>';
+            } else if (tier === 2) {
+                tone = 'green';
+                html = '⚡ <strong>EARNED SIZING STATUS: Tier 2 (Process Proven)</strong><br><span class="small">Dynamic % sizing, 2x EP conviction and larger position caps unlocked. Progress to Tier 1: ' + streakProgressText() + '.</span>';
+            } else {
+                tone = 'purple';
+                html = '🚀 <strong>EARNED SIZING STATUS: Tier 1 (Mastery Phase)</strong><br><span class="small">Full ' + CONFIG.tiers[1].pct.toFixed(2) + '% compounding unlocked. One severe violation sends you back to Tier 3.</span>';
+            }
+            box.innerHTML = html;
+            setTone(box, tone);
+            box.className = box.className.replace(/\bleft\b/g, '').trim() + ' left';
+
+            // lock dynamic option when not earned
+            const sel = $('sizerRiskMode');
+            const dynOpt = sel.querySelector('option[value="DYNAMIC"]');
+            if (dynOpt) dynOpt.disabled = tier > 2;
+            if (tier > 2 && sel.value === 'DYNAMIC') sel.value = 'FIXED';
+            void nat;
+        }
+
+        function renderBreadthResult() {
+            const el = $('breadthResult');
+            if (!appState.breadth) {
+                setTone(el, 'yellow');
+                el.textContent = 'No Market Monitor row evaluated yet.';
+            } else {
+                const b = appState.breadth;
+                const tone = b.posture === 'YES' ? 'green' : (b.posture === 'NO' ? 'red' : 'yellow');
+                const label = b.posture === 'YES' ? 'BREAKOUTS WORK (YES)' : (b.posture === 'NO' ? 'BREAKOUTS FAIL (NO)' : 'BE SELECTIVE (HALF SIZE)');
+                const fresh = breadthFresh();
+                setTone(el, fresh ? tone : 'yellow');
+                el.innerHTML = 'MARKET SAYS: ' + label + (fresh ? '' : ' (STALE: evaluated ' + new Date(b.ts).toLocaleString() + ')') +
+                    '<ul class="reason-list">' + b.reasons.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul>' +
+                    '<div class="small" style="margin-top:6px;">Evaluated ' + esc(new Date(b.ts).toLocaleString()) + '. Trusted for ' + CONFIG.breadthFreshHours + ' hours.</div>';
+            }
+            $('postureYes').className = 'posture-btn' + (appState.posture === 'YES' ? ' active-yes' : '');
+            $('postureSel').className = 'posture-btn' + (appState.posture === 'SELECTIVE' ? ' active-sel' : '');
+            $('postureNo').className = 'posture-btn' + (appState.posture === 'NO' ? ' active-no' : '');
+            const eff = effectivePosture();
+            $('effectivePostureLine').innerHTML = 'Effective posture for sizing: <strong style="color:' +
+                (eff === 'YES' ? 'var(--accent-green)' : (eff === 'NO' ? 'var(--accent-red)' : 'var(--accent-yellow)')) + '">' + eff + '</strong>' +
+                ' (your ceiling: ' + appState.posture + ', market: ' + (breadthFresh() ? appState.breadth.posture : 'no fresh read, capped at ' + CONFIG.stalePostureCeiling) + ')';
+        }
+
+        function renderConvictionUI() {
+            const name = val('tradeSetup');
+            const key = KEY_BY_SETUP[name];
+            const isEP = EP_FAMILY.indexOf(name) >= 0;
+            const gated = GATE_SETUPS.indexOf(key) >= 0;
+            $('catalystBox').style.display = gated ? 'block' : 'none';
+            const el = $('convictionStatus');
+            if (!gated) { el.textContent = ''; return; }
+            if (!isEP) {
+                el.style.color = 'var(--text-secondary)';
+                el.textContent = 'Passing all three checks (with posture YES and no drawdown defense) sizes this as a Hot-Market catalyst breakout instead of a single.';
+                return;
+            }
+            const conv = convictionStatus();
+            if (conv.active) { el.style.color = 'var(--accent-purple)'; el.textContent = '2x conviction is ACTIVE for this trade.'; }
+            else if (conv.requested) { el.style.color = 'var(--accent-yellow)'; el.textContent = '2x requested but not available: ' + conv.reasons.join(', ') + '.'; }
+            else { el.style.color = 'var(--text-secondary)'; el.textContent = 'Passing the gate sizes this as a full EP. Select 2x above only when you also meet the 2x requirements.'; }
+        }
+
+        function syncConvictionWithSetup() {
+            // Switching setups always drops back to 1x and clears the catalyst gate: 2x is re-earned per trade.
+            $('sizerConviction').value = '1x';
+            ['cat1', 'cat2', 'cat3'].forEach(id => { $(id).checked = false; });
+            handleInputSave();
         }
 
         function calculateSize() {
-            const equity = parseFloat(document.getElementById('sizerEquity').value) || 12000;
-            const entry = parseFloat(document.getElementById('sizerEntry').value) || 0;
-            const stop = parseFloat(document.getElementById('sizerStop').value) || 0;
-            const convictionMode = document.getElementById('sizerConviction').value;
-            const riskMode = document.getElementById('sizerRiskMode').value;
-            const is2x = convictionMode === '2x';
-            
-            const effectiveRisk = getEffectiveRisk();
-            const accountRiskPct = equity > 0 ? ((effectiveRisk / equity) * 100).toFixed(2) : "0.00";
+            const equity = appState.equity;
+            const entry = num('sizerEntry');
+            const stop = num('sizerStop');
+            const r = computeRisk();
+            const accountRiskPct = equity > 0 ? (r.risk / equity * 100).toFixed(2) : '0.00';
+            const banner = $('riskBanner');
 
-            if (entry > 0 && stop > 0 && entry > stop) {
-                const stopPct = (((entry - stop) / entry) * 100).toFixed(2);
-                document.getElementById('stopDistReadout').value = `${stopPct}% Stop ($${(entry - stop).toFixed(2)})`;
+            renderConvictionUI();
+            const fitInfo = getSetupFit(val('tradeSetup'));
+            const fb = $('fitBadge');
+            if (fitInfo.fit === 'FOCUS') { setTone(fb, 'green'); fb.textContent = '✓ FOCUS: on today\'s list'; }
+            else if (fitInfo.fit === 'AVOID') { setTone(fb, 'red'); fb.textContent = '✕ AVOID today' + (fitInfo.demoted ? ' (defense: focus only)' : ''); }
+            else { setTone(fb, 'yellow'); fb.textContent = '◦ NEUTRAL: only an A+ example'; }
+            $('classStatus').textContent = 'Size class: ' + CLASS_LABEL[r.cls] + '. Max ' + r.classCap.toFixed(0) + '% of equity per position (' + (r.hold === 'INTRADAY' ? 'intraday' : 'swing carry') + '), ' + r.remaining.toFixed(0) + '% total open-exposure room left.';
+
+            if (entry > 0 && stop > 0 && entry !== stop) {
+                const stopPct = (Math.abs(entry - stop) / entry * 100).toFixed(2);
+                $('stopDistReadout').value = (stop < entry ? 'LONG ' : 'SHORT ') + stopPct + '% Stop ($' + Math.abs(entry - stop).toFixed(2) + ')';
             } else {
-                document.getElementById('stopDistReadout').value = `0.00% Stop`;
+                $('stopDistReadout').value = '0.00% Stop';
             }
 
-            const banner = document.getElementById('riskBanner');
-            if (appState.posture === 'NO') {
-                banner.style.background = 'rgba(239, 68, 68, 0.2)';
-                banner.style.color = 'var(--accent-red)';
-                banner.style.borderColor = 'var(--accent-red)';
-                banner.innerText = 'TRADING LOCKED: Market Posture is NO. Stand aside.';
-            } else if (appState.posture === 'SELECTIVE') {
-                banner.style.background = 'rgba(245, 158, 11, 0.15)';
-                banner.style.color = 'var(--accent-yellow)';
-                banner.style.borderColor = 'var(--accent-yellow)';
-                banner.innerText = `ACTIVE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Account Risk - HALF SIZE POSTURE)`;
+            if (r.lock) {
+                setTone(banner, 'red');
+                banner.textContent = 'TRADING LOCKED: ' + r.lock;
+            } else if (isTilt()) {
+                setTone(banner, 'red');
+                banner.textContent = 'SIZER OFF: tilt state tagged (' + val('tradeMood') + '). Step away first.';
+            } else if (r.posture === 'SELECTIVE') {
+                setTone(banner, 'yellow');
+                banner.textContent = 'ACTIVE RISK: ' + money(r.risk) + ' (' + accountRiskPct + '% Account Risk - HALF SIZE POSTURE)';
+            } else if (r.conviction.active) {
+                setTone(banner, 'purple');
+                banner.textContent = '⚡ HEAVY CONVICTION RISK: ' + money(r.risk) + ' (' + accountRiskPct + '% Risk - 2x EP MODE [' + r.mode + '])';
             } else {
-                if (is2x) {
-                    banner.style.background = 'rgba(139, 92, 246, 0.2)';
-                    banner.style.color = 'var(--accent-purple)';
-                    banner.style.borderColor = 'var(--accent-purple)';
-                    banner.innerText = `⚡ HEAVY CONVICTION RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - 2x EP MODE [${riskMode}])`;
-                } else {
-                    banner.style.background = 'rgba(59, 130, 246, 0.1)';
-                    banner.style.color = 'var(--accent-blue)';
-                    banner.style.borderColor = 'var(--accent-blue)';
-                    banner.innerText = `ACTIVE RISK: $${effectiveRisk.toFixed(2)} (${accountRiskPct}% Risk - STANDARD SINGLE [${riskMode}])`;
-                }
+                setTone(banner, 'blue');
+                banner.textContent = 'ACTIVE RISK: ' + money(r.risk) + ' (' + accountRiskPct + '% Risk - STANDARD SINGLE [' + r.mode + ', TIER ' + r.tier + '])';
             }
 
-            if (entry > 0 && stop > 0 && entry > stop && effectiveRisk > 0) {
-                const stopDist = entry - stop;
-                const shares = Math.floor(effectiveRisk / stopDist);
+            const notesEl = $('sizerNotes');
+            const notes = r.notes.slice();
+
+            if (entry > 0 && stop > 0 && entry !== stop && r.risk > 0) {
+                const dir = stop < entry ? 1 : -1;
+                const dist = Math.abs(entry - stop);
+                const shares = maxSharesFor(entry, stop, r);
+                const byRisk = Math.floor(r.risk / dist);
                 const posValue = shares * entry;
-                const stopPct = ((stopDist / entry) * 100).toFixed(2);
-                const exposurePct = ((posValue / equity) * 100).toFixed(1);
-
-                let allocationTag = "";
-                if (exposurePct >= 33) {
-                    allocationTag = " 🔥 STOCKBEE HEAVY CONCENTRATION (>33% Position)";
-                } else if (exposurePct >= 20) {
-                    allocationTag = " ⚡ MODERATE CONCENTRATION (20%-33% Position)";
+                const stopPct = (dist / entry * 100).toFixed(2);
+                const exposurePct = (posValue / equity * 100).toFixed(1);
+                const actualRisk = shares * dist;
+                if (shares < byRisk) {
+                    const which = r.remaining < r.classCap ? 'total open-exposure room' : 'position size cap';
+                    notes.push('Sizing is limited by the ' + which + ': ' + shares + ' shares is ' + exposurePct + '% of equity, so you risk ' + money(actualRisk) + ' of the ' + money(r.risk) + ' allowed (' + (actualRisk / equity * 100).toFixed(2) + '% vs ' + accountRiskPct + '%).');
+                    if (r.tier > 1 && r.remaining >= r.classCap) {
+                        const nextCap = capFor(r.cls, r.tier - 1, r.posture, r.hold);
+                        if (nextCap > r.classCap) notes.push('At Tier ' + (r.tier - 1) + ' this size class opens up to ' + nextCap.toFixed(0) + '% per position.');
+                    }
                 }
-
-                document.getElementById('sizerShares').innerText = shares + " Shares";
-                document.getElementById('sizerDetails').innerText = `Value: $${posValue.toFixed(2)} | Stop: ${stopPct}% | Exposure: ${exposurePct}% Equity${allocationTag} | Risk: $${effectiveRisk.toFixed(2)} (${accountRiskPct}%)`;
-
-                document.getElementById('target1R').querySelector('strong').innerText = `$${(entry + stopDist).toFixed(2)}`;
-                document.getElementById('target2R').querySelector('strong').innerText = `$${(entry + (stopDist * 2)).toFixed(2)}`;
-                document.getElementById('target3R').querySelector('strong').innerText = `$${(entry + (stopDist * 3)).toFixed(2)}`;
+                if (r.hold !== 'INTRADAY') {
+                    const gapLoss = shares * Math.max(dist, entry * CONFIG.gap.assumedGapPct / 100);
+                    notes.push('Overnight gap check: a ' + CONFIG.gap.assumedGapPct + '% gap against you costs about ' + money(gapLoss) + ' (' + (gapLoss / equity * 100).toFixed(1) + '% of equity) versus ' + money(actualRisk) + ' planned.');
+                }
+                $('sizerShares').innerText = shares + ' Shares';
+                $('sizerDetails').innerText = 'Value: ' + money(posValue) + ' | Stop: ' + stopPct + '% | Exposure: ' + exposurePct + '% Equity (cap ' + r.capPct.toFixed(0) + '%) | Risk: ' + money(actualRisk) + ' (' + (actualRisk / equity * 100).toFixed(2) + '%)';
+                [1, 2, 3].forEach(k => {
+                    $('target' + k + 'R').querySelector('strong').innerText = '$' + (entry + dir * dist * k).toFixed(2);
+                });
             } else {
-                document.getElementById('sizerShares').innerText = "0 Shares";
-                document.getElementById('sizerDetails').innerText = "Value: $0.00 | Stop: 0.00% | Exposure: 0.0% Equity | Risk: $0.00 (0.00%)";
-                document.getElementById('target1R').querySelector('strong').innerText = "$0.00";
-                document.getElementById('target2R').querySelector('strong').innerText = "$0.00";
-                document.getElementById('target3R').querySelector('strong').innerText = "$0.00";
+                $('sizerShares').innerText = '0 Shares';
+                $('sizerDetails').innerText = 'Value: $0.00 | Stop: 0.00% | Exposure: 0.0% Equity | Risk: $0.00 (0.00%)';
+                [1, 2, 3].forEach(k => { $('target' + k + 'R').querySelector('strong').innerText = '$0.00'; });
             }
-
-            updateHUD();
+            notesEl.innerHTML = notes.map(n => '<li>' + esc(n) + '</li>').join('');
         }
 
+        // ---------- logging & closing ----------
         function saveTrade() {
-            const ticker = document.getElementById('tradeTicker').value.toUpperCase() || "N/A";
-            const setup = document.getElementById('tradeSetup').value;
-            const entry = parseFloat(document.getElementById('tradeEntry').value) || 0;
-            const stop = parseFloat(document.getElementById('tradeStop').value) || 0;
-            const shares = parseInt(document.getElementById('tradeShares').value) || 0;
-            const exitVal = document.getElementById('tradeExit').value;
-            const exit = parseFloat(exitVal);
+            const ticker = (val('tradeTicker') || '').trim().toUpperCase();
+            const setup = val('tradeSetup');
+            const source = val('tradeSource');
+            const mood = val('tradeMood');
+            const entry = num('tradeEntry');
+            const stop = num('tradeStop');
+            const shares = parseInt(val('tradeShares')) || 0;
+            const exitVal = num('tradeExit');
 
-            const isClosed = !isNaN(exit) && exit > 0;
-
-            const audit1 = document.getElementById('audit1').checked;
-            const audit2 = document.getElementById('audit2').checked;
-            const audit3 = document.getElementById('audit3').checked;
-            const audit4 = document.getElementById('audit4').checked;
-            const passAudit = audit1 && audit2 && audit3 && audit4;
-
-            let rMultStr = "OPEN";
-            if (isClosed && entry > 0 && stop > 0 && entry !== stop) {
-                const rMult = ((exit - entry) / Math.abs(entry - stop)).toFixed(2);
-                rMultStr = (rMult >= 0 ? '+' : '') + rMult + 'R';
+            if (!ticker || !(entry > 0) || !(stop > 0) || !(shares > 0) || entry === stop) {
+                alert('Enter ticker, executed shares, entry and stop (stop must differ from entry) before logging.');
+                return;
             }
 
-            if (passAudit) {
-                appState.streak += 1;
-                appState.tier = getTierNameFromStreak(appState.streak);
-            } else {
-                appState.streak = 0;
-                appState.tier = "Tier 3 ($60)";
-                alert("Process Audit Failed! Streak reset to Day 0. Active risk forced back to Tier 3 ($60).");
+            const direction = stop < entry ? 1 : -1;
+            const lockReason = getLockReason();
+            const r = computeRisk();
+            const maxShares = maxSharesFor(entry, stop, r);
+            const execRisk = shares * Math.abs(entry - stop);
+            const execExposure = appState.equity > 0 ? shares * entry / appState.equity * 100 : 0;
+
+            const fails = [];
+            let severe = false, minor = false;
+
+            if (!checked('audit1')) { fails.push('#1 Posture / SA not respected'); severe = true; }
+            if (!checked('audit2')) { fails.push('#2 Setup did not meet playbook criteria'); minor = true; }
+            if (!checked('audit3')) { fails.push('#3 Sizing was not pre-calculated'); severe = true; }
+            if (lockReason) { fails.push('Traded while locked: ' + lockReason); severe = true; }
+            if (source === 'OTHER') { fails.push('Idea did not come from a named scan'); minor = true; }
+            if (shares > Math.floor(maxShares * (1 + CONFIG.oversizeTolerance))) {
+                fails.push('Oversized: ' + shares + ' shares vs maximum ' + maxShares + ' (risk ' + money(execRisk) + ', exposure ' + execExposure.toFixed(1) + '%)');
+                severe = true;
+            }
+            if (TILT_STATES.indexOf(mood) >= 0) { fails.push('Entered in tilt state: ' + mood); minor = true; }
+            const fitInfo = getSetupFit(setup);
+            if (CONFIG.enforceDirective && fitInfo.fit === 'AVOID') {
+                fails.push('Setup is on today\'s AVOID list (' + DIRECTIVES[fitInfo.regime].label + (fitInfo.demoted ? ', defense: focus setups only' : '') + ')');
+                minor = true;
             }
 
-            const tradeRecord = {
+            const trade = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString(),
-                ticker,
-                setup,
-                entry,
-                stop,
-                shares,
-                exit: isClosed ? exit : null,
-                rMult: rMultStr,
-                status: isClosed ? 'CLOSED' : 'OPEN',
-                passAudit
+                ticker: ticker, setup: setup, source: source, mood: mood, direction: direction,
+                entry: entry, stop: stop, shares: shares,
+                initialShares: shares, initialStop: stop, trims: [], stopMoves: [],
+                exit: null, closedAt: null, rMult: 'OPEN', rNum: 0, pnl: 0,
+                status: 'OPEN',
+                prePass: fails.length === 0, preFails: fails,
+                stopHonored: null, passAudit: false,
+                tierAtEntry: r.tier, postureAtEntry: r.posture,
+                allowedRisk: r.risk, maxShares: maxShares, execRisk: execRisk,
+                fit: fitInfo.fit, regime: fitInfo.regime, holdPlan: val('sizerHold') === 'INTRADAY' ? 'INTRADAY' : 'SWING',
+                sizeClass: r.cls, capAtEntry: r.capPct,
+                note: val('tradeMarketNote')
             };
 
-            appState.history.unshift(tradeRecord);
+            if (severe) applySevereViolation();
+            else if (minor) applyMinorViolation();
 
-            document.getElementById('tradeTicker').value = '';
-            document.getElementById('tradeEntry').value = '';
-            document.getElementById('tradeStop').value = '';
-            document.getElementById('tradeShares').value = '';
-            document.getElementById('tradeExit').value = '';
-            document.getElementById('audit1').checked = false;
-            document.getElementById('audit2').checked = false;
-            document.getElementById('audit3').checked = false;
-            document.getElementById('audit4').checked = false;
+            appState.history.unshift(trade);
+
+            if (exitVal > 0) finalizeClose(trade, exitVal);
+
+            ['tradeTicker', 'tradeShares', 'tradeEntry', 'tradeStop', 'tradeExit'].forEach(id => { $(id).value = ''; });
+            ['audit1', 'audit2', 'audit3'].forEach(id => { $(id).checked = false; });
+            $('sizerConviction').value = '1x';
+            ['cat1', 'cat2', 'cat3'].forEach(id => { $(id).checked = false; });
 
             handleInputSave();
             saveState();
-            updateHUD();
-            renderHistory();
-            calculateSize();
+            refreshAll();
+
+            if (fails.length) {
+                alert((severe ? 'SEVERE process violation. Streak reset, risk back to Tier 3, and the rest of today is locked.\n\n' : 'Process violation. You were demoted one step.\n\n') + fails.join('\n'));
+            } else if (TILT_STATES.indexOf(mood) < 0) {
+                // clean entry logged
+            }
         }
 
         function closeTrade(id) {
             const trade = appState.history.find(t => t.id === id);
             if (!trade) return;
-            const exitPriceStr = prompt(`Enter Exit Price ($) for ${trade.ticker}:`, trade.entry);
+            const exitPriceStr = prompt('Enter Exit Price ($) for the remaining ' + trade.shares + ' shares of ' + trade.ticker + ':', trade.entry);
             if (exitPriceStr === null) return;
             const exitPrice = parseFloat(exitPriceStr);
-            if (isNaN(exitPrice) || exitPrice <= 0) {
-                alert("Invalid exit price.");
-                return;
-            }
-
-            trade.exit = exitPrice;
-            trade.status = 'CLOSED';
-            if (trade.entry > 0 && trade.stop > 0 && trade.entry !== trade.stop) {
-                const rMult = ((exitPrice - trade.entry) / Math.abs(trade.entry - trade.stop)).toFixed(2);
-                trade.rMult = (rMult >= 0 ? '+' : '') + rMult + 'R';
-            } else {
-                trade.rMult = 'FLAT';
-            }
-
+            if (isNaN(exitPrice) || exitPrice <= 0) { alert('Invalid exit price.'); return; }
+            finalizeClose(trade, exitPrice);
             saveState();
-            renderHistory();
+            refreshAll();
+        }
+
+        function finalizeClose(trade, exitPrice) {
+            const ans = (prompt('Audit point 4 for ' + trade.ticker + ': was the initial hard stop placed immediately and honored (not widened, moved lower, or averaged down)?\n\nType Y for yes or N for no:') || '').trim().toLowerCase();
+            if (ans !== 'y' && ans !== 'n') {
+                alert('A Y or N answer is required to close a trade. The trade stays open.');
+                return false;
+            }
+            trade.exit = exitPrice;
+            trade.closedAt = Date.now();
+            trade.status = 'CLOSED';
+            const m = tradeMetrics(trade);
+            trade.rNum = m.rNum;
+            trade.pnl = m.pnl;
+            trade.finalPnl = m.finalPnl;
+            trade.rMult = fmtR(m.rNum);
+            trade.stopHonored = ans === 'y';
+            let heldOvernight = false;
+            if (trade.holdPlan === 'INTRADAY' && dayKey(trade.closedAt) !== dayKey(trade.id)) {
+                heldOvernight = true;
+                trade.prePass = false;
+                trade.preFails.push('Intraday plan was held overnight');
+            }
+            trade.passAudit = trade.prePass && trade.stopHonored;
+
+            if (!trade.stopHonored || heldOvernight) {
+                applySevereViolation();
+                alert((heldOvernight ? 'Intraday plan held overnight. ' : 'Stop discipline violation. ') + 'Streak reset, risk back to Tier 3, and the rest of the day is locked.');
+            } else if (trade.passAudit) {
+                if (appState.streak === 0 || !appState.streakStart) appState.streakStart = trade.id;
+                appState.streak += 1;
+            }
+            return true;
+        }
+
+        function trimTrade(id) {
+            const t = appState.history.find(x => x.id === id);
+            if (!t || t.status !== 'OPEN') return;
+            const shStr = prompt('Trim ' + t.ticker + ': how many shares did you sell? (You hold ' + t.shares + ')');
+            if (shStr === null) return;
+            const sh = parseInt(shStr, 10);
+            if (!(sh > 0) || sh >= t.shares) { alert('Enter a share count between 1 and ' + (t.shares - 1) + '. To sell everything, use Close.'); return; }
+            const pStr = prompt('Sale price ($) for the ' + sh + ' shares:');
+            if (pStr === null) return;
+            const price = parseFloat(pStr);
+            if (!(price > 0)) { alert('Invalid price.'); return; }
+            const pnl = t.direction * (price - t.entry) * sh;
+            const first = t.trims.length === 0;
+            t.trims.push({ ts: Date.now(), shares: sh, price: price, pnl: pnl });
+            t.shares -= sh;
+            saveState();
+            refreshAll();
+            if (first) alert('Trim logged (' + money(pnl) + ' banked). Plan rule: after the first target, move your stop to breakeven at your broker, then record it with Stop.');
+        }
+
+        function moveStop(id) {
+            const t = appState.history.find(x => x.id === id);
+            if (!t || t.status !== 'OPEN') return;
+            const sStr = prompt('New stop for ' + t.ticker + ' (current $' + t.stop.toFixed(2) + '). A stop only moves in your favor:', t.stop);
+            if (sStr === null) return;
+            const ns = parseFloat(sStr);
+            if (!(ns > 0)) { alert('Invalid stop.'); return; }
+            const worse = t.direction === 1 ? ns < t.stop : ns > t.stop;
+            if (worse) { alert('One-way stop rule: a stop only moves up on a long and down on a short. Not recorded. If you really moved it at your broker, answer N on the stop question when you close.'); return; }
+            if (ns === t.stop) return;
+            t.stopMoves.push({ ts: Date.now(), from: t.stop, to: ns });
+            t.stop = ns;
+            saveState();
+            refreshAll();
         }
 
         function deleteTrade(id) {
-            if (confirm("Delete this trade record?")) {
+            const trade = appState.history.find(t => t.id === id);
+            if (trade && trade.status === 'OPEN' && trade.trims.length) { alert('This trade has banked trims that count toward your loss limits. Close it instead of deleting it.'); return; }
+            if (!trade || trade.status !== 'OPEN') { alert('Closed trades cannot be deleted. They feed your loss limits and review.'); return; }
+            if (confirm('Delete this OPEN trade record? Only do this for a mistaken entry.')) {
                 appState.history = appState.history.filter(t => t.id !== id);
                 saveState();
-                renderHistory();
+                refreshAll();
             }
         }
 
         function renderHistory() {
-            const tbody = document.getElementById('historyTableBody');
+            const tbody = $('historyTableBody');
             if (!tbody) return;
-
             if (!appState.history || appState.history.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: var(--text-secondary);">No trades logged yet.</td></tr>';
                 return;
             }
-
             tbody.innerHTML = appState.history.map(t => {
-                const auditTag = t.passAudit 
-                    ? '<span class="tag-pass">PASS</span>' 
-                    : '<span class="tag-fail">FAIL</span>';
-                
-                let resultTag = '<span class="tag-open">OPEN</span>';
-                if (t.status === 'CLOSED') {
-                    const isWin = t.rMult.startsWith('+');
-                    resultTag = `<span style="color: ${isWin ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: bold;">${t.rMult}</span>`;
+                let auditTag;
+                if (t.status === 'OPEN') {
+                    auditTag = t.prePass ? '<span class="tag-open">PENDING</span>' : '<span class="tag-fail" title="' + esc(t.preFails.join(' | ')) + '">FAIL</span>';
+                } else {
+                    auditTag = t.passAudit ? '<span class="tag-pass">PASS</span>' : '<span class="tag-fail" title="' + esc(t.preFails.concat(t.stopHonored === false ? ['Stop not honored'] : []).join(' | ')) + '">FAIL</span>';
                 }
-
+                const banked = (t.trims || []).reduce((a, x) => a + x.pnl, 0);
+                let resultTag = '<span class="tag-open">OPEN</span>' + (t.trims.length ? ' <small style="color:' + (banked >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + '">' + (banked >= 0 ? '+' : '-') + '$' + Math.abs(banked).toFixed(0) + ' banked</small>' : '');
+                if (t.status === 'CLOSED') {
+                    const color = t.rNum > 0 ? 'var(--accent-green)' : (t.rNum < 0 ? 'var(--accent-red)' : 'var(--text-secondary)');
+                    resultTag = '<span style="color:' + color + '; font-weight: bold;">' + esc(t.rMult) + '</span>';
+                }
                 const actionBtn = t.status === 'OPEN'
-                    ? `<button class="btn-close-trade" onclick="closeTrade(${t.id})">Close</button> <button class="btn-danger" onclick="deleteTrade(${t.id})">✕</button>`
-                    : `<button class="btn-danger" onclick="deleteTrade(${t.id})">✕</button>`;
-
-                return `<tr>
-                    <td>${t.date}</td>
-                    <td><strong>${t.ticker}</strong></td>
-                    <td>${t.setup}</td>
-                    <td>$${t.entry.toFixed(2)}</td>
-                    <td>${t.exit ? '$' + t.exit.toFixed(2) : '-'}</td>
-                    <td>${resultTag}</td>
-                    <td>${auditTag}</td>
-                    <td>${actionBtn}</td>
-                </tr>`;
+                    ? '<button class="btn-close-trade" onclick="trimTrade(' + t.id + ')">Trim</button> <button class="btn-close-trade" onclick="moveStop(' + t.id + ')">Stop</button> <button class="btn-close-trade" onclick="closeTrade(' + t.id + ')">Close</button> <button class="btn-danger" onclick="deleteTrade(' + t.id + ')">✕</button>'
+                    : '';
+                return '<tr>' +
+                    '<td>' + esc(t.date || '') + '</td>' +
+                    '<td><strong>' + esc(t.ticker) + '</strong>' + (t.direction === -1 ? ' <small>(S)</small>' : '') + '</td>' +
+                    '<td>' + esc(t.setup) + '</td>' +
+                    '<td>$' + t.entry.toFixed(2) + '</td>' +
+                    '<td>' + (t.status === 'OPEN' && t.shares !== t.initialShares ? t.shares + ' / ' + t.initialShares : t.initialShares) + '</td>' +
+                    '<td>' + (t.exit ? '$' + t.exit.toFixed(2) : '-') + '</td>' +
+                    '<td>' + resultTag + '</td>' +
+                    '<td>' + auditTag + '</td>' +
+                    '<td>' + esc(t.mood) + '</td>' +
+                    '<td>' + actionBtn + '</td>' +
+                    '</tr>';
             }).join('');
         }
 
+        // ---------- settings (weekend review) ----------
+        function applyConfig() {
+            const cfg = appState.config;
+            const now = Date.now();
+            const due = cfg.pending.filter(x => x.effectiveAt <= now);
+            if (due.length) {
+                due.forEach(x => { cfg.overrides[x.path] = x.value; });
+                cfg.pending = cfg.pending.filter(x => x.effectiveAt > now);
+                saveState();
+            }
+            SCHEMA.forEach(f => setPath(CONFIG, f.path, getPath(DEFAULT_CONFIG, f.path)));
+            Object.keys(cfg.overrides).forEach(k => { if (SCHEMA_BY_PATH[k]) setPath(CONFIG, k, cfg.overrides[k]); });
+        }
+
+        function cfgId(path) { return 'cfg_' + path.replace(/\./g, '_'); }
+
+        function toggleSettings(show) {
+            if (show) renderSettings(false);
+            $('settingsModal').style.display = show ? 'block' : 'none';
+        }
+
+        function renderSettings(useDefaults) {
+            applyConfig();
+            const pend = appState.config.pending;
+            const pendBy = {};
+            pend.forEach(x => { pendBy[x.path] = x; });
+            $('settingsNote').innerHTML = 'Tightening changes (smaller caps and limits, harder unlocks) apply immediately. <strong>Loosening changes wait ' + LOOSEN_DELAY_DAYS + ' days</strong>, so a bad day cannot talk you into bigger size. Make these changes on a weekend, not mid-session. Settings are included in Backup Data.';
+            $('settingsPending').innerHTML = pend.length
+                ? '<div class="alert-banner tone-yellow left">Pending loosening changes:<ul class="reason-list">' + pend.map(x =>
+                    '<li>' + esc(SCHEMA_BY_PATH[x.path].label) + ': ' + getPath(CONFIG, x.path) + ' to ' + x.value + ' on ' + esc(new Date(x.effectiveAt).toLocaleDateString()) +
+                    ' <button class="btn-close-trade" data-path="' + x.path + '" onclick="cancelPending(this.dataset.path)">Cancel</button></li>').join('') + '</ul></div>'
+                : '';
+            let html = '', group = '';
+            SCHEMA.forEach(f => {
+                if (f.group !== group) {
+                    if (group) html += '</div>';
+                    group = f.group;
+                    html += '<h4 style="margin: 14px 0 8px; color: var(--accent-blue);">' + esc(group) + '</h4><div class="grid-2">';
+                }
+                const cur = useDefaults ? getPath(DEFAULT_CONFIG, f.path) : (pendBy[f.path] ? pendBy[f.path].value : getPath(CONFIG, f.path));
+                html += '<div><label>' + esc(f.label) + '</label><input type="number" id="' + cfgId(f.path) + '" value="' + cur + '" min="' + f.min + '" max="' + f.max + '" step="' + f.step + '" inputmode="decimal"></div>';
+            });
+            html += '</div>';
+            $('settingsForm').innerHTML = html;
+        }
+
+        function cancelPending(path) {
+            appState.config.pending = appState.config.pending.filter(x => x.path !== path);
+            saveState();
+            renderSettings(false);
+            refreshAll();
+        }
+
+        function saveSettings() {
+            applyConfig();
+            const cfg = appState.config;
+            const pendBy = {};
+            cfg.pending.forEach(x => { pendBy[x.path] = x; });
+            const desired = {};
+            const errors = [];
+            SCHEMA.forEach(f => {
+                const el = $(cfgId(f.path));
+                if (!el) return;
+                const v = parseFloat(el.value);
+                if (!isFinite(v) || v < f.min || v > f.max) { errors.push(f.label + ' must be between ' + f.min + ' and ' + f.max + '.'); return; }
+                desired[f.path] = v;
+            });
+            const ladders = {};
+            SCHEMA.forEach(f => { if (f.ladder && desired[f.path] !== undefined) { (ladders[f.ladder] = ladders[f.ladder] || []).push(f); } });
+            Object.keys(ladders).forEach(k => {
+                const arr = ladders[k].sort((a, b) => a.rank - b.rank);
+                for (let i = 1; i < arr.length; i++) {
+                    if (desired[arr[i].path] < desired[arr[i - 1].path]) errors.push(arr[i].label + ' cannot be lower than ' + arr[i - 1].label + '.');
+                }
+            });
+            if (desired['drawdown.defensePct'] !== undefined && desired['drawdown.hardLockPct'] !== undefined && desired['drawdown.defensePct'] >= desired['drawdown.hardLockPct']) {
+                errors.push('Drawdown defense must start before the drawdown lock.');
+            }
+            if (errors.length) { alert('Not saved:\n\n' + errors.join('\n')); return; }
+
+            const now = Date.now();
+            let applied = 0, queued = 0;
+            SCHEMA.forEach(f => {
+                if (desired[f.path] === undefined) return;
+                const cur = getPath(CONFIG, f.path);
+                const pend = pendBy[f.path];
+                const base = pend ? pend.value : cur;
+                const v = desired[f.path];
+                if (v === base) return;
+                cfg.pending = cfg.pending.filter(x => x.path !== f.path);
+                if (v === cur) return;
+                if ((v - cur) * f.looser > 0) {
+                    cfg.pending.push({ path: f.path, value: v, effectiveAt: now + LOOSEN_DELAY_DAYS * DAY });
+                    queued++;
+                } else {
+                    cfg.overrides[f.path] = v;
+                    applied++;
+                }
+            });
+            saveState();
+            applyConfig();
+            renderSettings(false);
+            refreshAll();
+            alert('Saved. ' + applied + ' tightening change(s) applied now. ' + queued + ' loosening change(s) will take effect in ' + LOOSEN_DELAY_DAYS + ' days.');
+        }
+
+        // ---------- rules modal ----------
+        function renderRules() {
+            const C = CONFIG, u = C.unlock, L = C.limits, D = C.drawdown;
+            const carry = t => (C.gap.maxGapLossPct[t] / C.gap.assumedGapPct * 100);
+            const stopRows = [1, 1.5, 2, 3, 5].map(sp => '<tr><td>' + sp + '% stop</td><td>' + Math.min(999, 0.5 / sp * 100).toFixed(0) + '%</td><td>' + Math.min(999, 0.75 / sp * 100).toFixed(0) + '%</td><td>' + Math.min(999, 1.0 / sp * 100).toFixed(0) + '%</td></tr>').join('');
+            const capRow = (name, cls) => '<tr><td>' + name + '</td><td>' + C.caps[cls][3] + '%</td><td>' + C.caps[cls][2] + '%</td><td>' + C.caps[cls][1] + '%</td></tr>';
+            $('rulesDynamic').innerHTML =
+                '<h4 style="color:var(--accent-green);">Earned Risk Tiers (current settings)</h4>' +
+                '<ul class="rules-list">' +
+                '<li><strong>Tier 3:</strong> $' + C.tiers[3].fixed + ' fixed or ' + C.tiers[3].pct.toFixed(2) + '% (whichever is smaller). Always 1x.</li>' +
+                '<li><strong>Tier 2:</strong> needs ' + u.tier2.trades + ' clean closed trades AND ' + u.tier2.weeks + ' weeks. $' + C.tiers[2].fixed + ' fixed or ' + C.tiers[2].pct.toFixed(2) + '% dynamic. Unlocks dynamic % and 2x EP conviction.</li>' +
+                '<li><strong>Tier 1:</strong> needs ' + u.tier1.trades + ' clean closed trades AND ' + u.tier1.weeks + ' weeks. $' + C.tiers[1].fixed + ' fixed or ' + C.tiers[1].pct.toFixed(2) + '% dynamic.</li>' +
+                '<li><strong>Hard ceiling:</strong> no trade ever risks more than ' + C.maxRiskPctCeiling + '% of equity, after every multiplier.</li>' +
+                '</ul>' +
+                '<h4 style="color:var(--accent-blue);">How Size Really Works</h4>' +
+                '<ul class="rules-list">' +
+                '<li>Shares = risk dollars divided by stop distance. Risk stays small; <strong>size comes from tight stops on quality stocks.</strong></li>' +
+                '<li>The position caps below only bind when the stop is tight. A wide stop shrinks the share count on its own.</li>' +
+                '</ul>' +
+                '<table class="mini"><thead><tr><th>Stop distance</th><th>Position at 0.50% risk</th><th>at 0.75%</th><th>at 1.00%</th></tr></thead><tbody>' + stopRows + '</tbody></table>' +
+                '<h4 style="color:var(--accent-purple);">Position Size Caps (% of equity in one position)</h4>' +
+                '<table class="mini"><thead><tr><th>Size class</th><th>Tier 3</th><th>Tier 2</th><th>Tier 1</th></tr></thead><tbody>' +
+                capRow('Overnight (Anticipation, Reversal)', 'OVERNIGHT') + capRow('Singles (MB, Consolidation, Continuation, Bounce, Short)', 'SINGLE') +
+                capRow('Hot-Market catalyst breakout (gate passed, posture YES)', 'HOT') + capRow('Episodic Pivot (catalyst gate passed)', 'EP') +
+                '<tr><td>Swing carry limit (applies to every class when you hold overnight)</td><td>' + carry(3) + '%</td><td>' + carry(2) + '%</td><td>' + carry(1) + '%</td></tr>' +
+                '</tbody></table>' +
+                '<ul class="rules-list">' +
+                '<li>An EP without the catalyst gate is sized as a single. Selective posture halves every cap.</li>' +
+                '<li><strong>Swing carry limit:</strong> a position held overnight may not lose more than ' + C.gap.maxGapLossPct[3] + '% / ' + C.gap.maxGapLossPct[2] + '% / ' + C.gap.maxGapLossPct[1] + '% of equity if it gaps ' + C.gap.assumedGapPct + '% against you, because stops are not guaranteed through a gap. Choose Intraday Only (flat before the close) to use the full class cap.</li>' +
+                '<li><strong>Total open exposure:</strong> YES ' + C.totalExposure.YES[3] + '% / ' + C.totalExposure.YES[2] + '% / ' + C.totalExposure.YES[1] + '%, Selective ' + C.totalExposure.SELECTIVE[3] + '% / ' + C.totalExposure.SELECTIVE[2] + '% / ' + C.totalExposure.SELECTIVE[1] + '% (Tier 3 / 2 / 1). No margin.</li>' +
+                '</ul>' +
+                '<h4 style="color:var(--accent-red);">Guardrails (these lock the sizer)</h4>' +
+                '<ul class="rules-list">' +
+                '<li><strong>Drawdown defense:</strong> ' + D.defensePct + '%+ below peak equity forces Tier 3, fixed dollars, 1x only, and focus setups only until you recover.</li>' +
+                '<li><strong>Drawdown lock:</strong> ' + D.hardLockPct + '%+ below peak locks new trades for ' + D.hardLockDays + ' days.</li>' +
+                '<li><strong>Daily loss limit:</strong> ' + L.dailyLossPct[3] + '% / ' + L.dailyLossPct[2] + '% / ' + L.dailyLossPct[1] + '% of equity (Tier 3 / 2 / 1). <strong>Weekly:</strong> ' + L.weeklyLossPct[3] + '% / ' + L.weeklyLossPct[2] + '% / ' + L.weeklyLossPct[1] + '%. Risk is also capped to the remaining budget so one full stop cannot breach a limit.</li>' +
+                '<li><strong>Frequency:</strong> max ' + L.maxNewTradesPerDay + ' new trades per day and ' + L.maxOpenPositions + ' open positions.</li>' +
+                '<li><strong>Scaling out:</strong> use Trim to log each partial sale (banked profit counts toward your daily and weekly limits right away) and Stop to move a stop in your favor. A stop can never be moved the wrong way.</li>' +
+                '<li><strong>Posture:</strong> breadth sets the ceiling. You can lower it, never raise it. NO means locked. A stale read caps you at ' + C.stalePostureCeiling + '.</li>' +
+                '<li><strong>Tilt:</strong> tagging FOMO, Frustrated or Revenge turns the sizer off.</li>' +
+                '</ul>' +
+                '<h4 style="color:var(--accent-purple);">Four-Point Audit & Consequences</h4>' +
+                '<ul class="rules-list">' +
+                '<li>1. Posture and locks respected (auto-checked against your locks).</li>' +
+                '<li>2. Playbook setup quality, from a named scan (Other / Discretionary fails this).</li>' +
+                '<li>3. Pre-calculated sizing, executed size at or under the maximum (auto-checked, ' + (C.oversizeTolerance * 100).toFixed(0) + '% tolerance).</li>' +
+                '<li>4. Hard stop placed immediately and honored (asked at close).</li>' +
+                '<li><strong>Severe</strong> (breaking #1, #3, a lock, the stop, or holding an Intraday plan overnight): streak to zero, back to Tier 3, rest of the day locked.</li>' +
+                '<li><strong>Minor</strong> (#2, a discretionary idea, a tilt entry, or a setup on today\'s AVOID list): demoted one step. Tier 1 drops to Tier 2. Tier 2 and Tier 3 restart the streak.</li>' +
+                '<li>A trade counts toward your streak only after it closes with all four points clean.</li>' +
+                '</ul>' +
+                '<hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">';
+        }
+
         function toggleModal(show) {
-            const modal = document.getElementById('rulesModal');
+            const modal = $('rulesModal');
+            if (show) renderRules();
             if (modal) modal.style.display = show ? 'block' : 'none';
         }
 
+        // ---------- review text ----------
         function generateGeminiUpdate() {
+            const now = Date.now();
+            const today = dayKey(now);
             const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-            const equity = document.getElementById('sizerEquity').value || '12000';
-            const mode = document.getElementById('sizerRiskMode').value;
+            const todays = appState.history.filter(t => dayKey(t.id) === today || (t.closedAt && dayKey(t.closedAt) === today));
+            const opens = appState.history.filter(t => t.status === 'OPEN');
+            const last7 = appState.history.filter(t => now - t.id < 7 * DAY);
+            const r = computeRisk();
 
-            let text = `=== STOCKBEE DAILY PROCESS AUDIT (${dateStr}) ===\n`;
-            text += `• Account Equity: $${parseFloat(equity).toLocaleString()}\n`;
-            text += `• Market Posture: ${appState.posture}\n`;
-            text += `• Sizing Mode: ${mode}\n`;
-            text += `• Streak Status: ${appState.streak} / 10 Consecutive Validated Trades\n`;
-            text += `• Active Risk Tier: ${appState.tier}\n\n`;
+            let text = '=== STOCKBEE DAILY PROCESS AUDIT (' + dateStr + ') ===\n';
+            text += '• Account Equity: $' + appState.equity.toLocaleString() + ' | Peak: $' + appState.peak.toLocaleString() + ' | Drawdown: ' + ddPct().toFixed(1) + '%\n';
+            text += '• Effective Posture: ' + effectivePosture() + ' (my ceiling ' + appState.posture + ', market ' + (breadthFresh() ? appState.breadth.posture : 'stale') + ')\n';
+            text += '• Directive: ' + DIRECTIVES[currentRegime().key].label + '\n';
+            text += '• Active Tier: ' + effectiveTier() + ' | Mode: ' + r.mode + ' | Next-trade risk: ' + money(r.risk) + '\n';
+            text += '• Streak: ' + appState.streak + ' clean closed trades, ' + streakWeeks() + ' wks (' + streakProgressText() + ')\n';
+            text += '• Realized today: ' + money(pnlToday()) + ' (limit -' + money0(dailyLimit()) + ') | week: ' + money(pnlWeek()) + ' (limit -' + money0(weeklyLimit()) + ')\n';
+            const lock = getLockReason();
+            text += '• Lock status: ' + (lock || 'none') + '\n\n';
 
-            text += `--- TODAY'S TRADES (${appState.history.length} Total Logged) ---\n`;
-            if (appState.history.length === 0) {
-                text += `No trades executed today. Strict adherence to posture / setup filters.\n`;
+            text += "--- TODAY'S TRADES (" + todays.length + ') ---\n';
+            if (todays.length === 0) {
+                text += 'No trades today. Strict adherence to posture / setup filters.\n';
             } else {
-                appState.history.forEach((t, i) => {
-                    text += `${i+1}. $${t.ticker} (${t.setup}) | Entry: $${t.entry} | Exit: ${t.exit ? '$' + t.exit : 'OPEN'} | R-Mult: ${t.rMult} | Audit: ${t.passAudit ? 'PASSED' : 'FAILED'}\n`;
+                todays.forEach((t, i) => {
+                    text += (i + 1) + '. $' + t.ticker + ' (' + t.setup + ', ' + t.source + ') | Entry: $' + t.entry + ' | Stop: $' + t.stop + ' | Shares: ' + t.initialShares + (t.status === 'OPEN' && t.trims.length ? ' (' + t.shares + ' left)' : '') +
+                        ' | Exit: ' + (t.exit ? '$' + t.exit : 'OPEN') + ' | R: ' + t.rMult + ' | Fit: ' + (t.fit || '-') + ' | State: ' + t.mood +
+                        ' | Audit: ' + (t.status === 'OPEN' ? (t.prePass ? 'PENDING' : 'FAILED') : (t.passAudit ? 'PASSED' : 'FAILED')) + '\n';
+                    if (t.preFails.length) text += '     Violations: ' + t.preFails.join('; ') + '\n';
+                    if (t.stopHonored === false) text += '     Violation: stop not honored\n';
                 });
             }
+            text += '\n--- OPEN POSITIONS (' + opens.length + ') ---\n';
+            if (opens.length === 0) text += 'None.\n';
+            opens.forEach(t => { text += '• $' + t.ticker + ' ' + t.shares + ' sh @ $' + t.entry + ', stop $' + t.stop + (t.trims.length ? ' (trimmed from ' + t.initialShares + ', banked ' + money(t.trims.reduce((a, x) => a + x.pnl, 0)) + ')' : '') + '\n'; });
 
-            text += `\n--- KEY PROCESS OBSERVATIONS ---\n`;
-            const note = document.getElementById('tradeMarketNote').value;
-            text += `• Market/SA Note: ${note || 'N/A'}\n`;
-            text += `• Process Compliance: ${appState.history.every(t => t.passAudit) ? '100% Rule Compliance' : 'Rule Violation Detected'}\n`;
+            const closed7 = last7.filter(t => t.status === 'CLOSED');
+            const avgR = closed7.length ? closed7.reduce((a, t) => a + (t.rNum || 0), 0) / closed7.length : 0;
+            const moods = {};
+            last7.forEach(t => { moods[t.mood] = (moods[t.mood] || 0) + 1; });
+            text += '\n--- LAST 7 DAYS ---\n';
+            text += '• Trades logged: ' + last7.length + ' | Closed: ' + closed7.length + ' | Avg R: ' + avgR.toFixed(2) + 'R\n';
+            text += '• Audit fails: ' + last7.filter(t => (t.status === 'CLOSED' && !t.passAudit) || (t.status === 'OPEN' && !t.prePass)).length + '\n';
+            text += '• Mental states at entry: ' + (Object.keys(moods).length ? Object.keys(moods).map(k => k + ' x' + moods[k]).join(', ') : 'n/a') + '\n';
 
-            document.getElementById('geminiOutput').value = text;
+            text += '\n--- KEY PROCESS OBSERVATIONS ---\n';
+            text += '• Market/SA Note: ' + (val('tradeMarketNote') || 'N/A') + '\n';
+            if (breadthFresh()) text += '• Market Monitor: ' + appState.breadth.reasons.join(' | ') + '\n';
+            text += '• Process Compliance Today: ' + (todays.every(t => t.status === 'OPEN' ? t.prePass : t.passAudit) ? '100% Rule Compliance' : 'Rule Violation Detected') + '\n';
+
+            $('geminiOutput').value = text;
         }
 
         function copyGeminiText() {
-            const textarea = document.getElementById('geminiOutput');
+            const textarea = $('geminiOutput');
             textarea.select();
-            document.execCommand('copy');
-            alert('Gemini Review Text copied to clipboard!');
+            textarea.setSelectionRange(0, 999999);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textarea.value).then(() => alert('Gemini Review Text copied to clipboard!')).catch(() => { document.execCommand('copy'); alert('Gemini Review Text copied to clipboard!'); });
+            } else {
+                document.execCommand('copy');
+                alert('Gemini Review Text copied to clipboard!');
+            }
         }
 
+        // ---------- backup / restore ----------
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `stockbee_terminal_backup_${Date.now()}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const json = JSON.stringify(appState, null, 2);
+            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(json);
+            const a = document.createElement('a');
+            a.setAttribute('href', dataStr);
+            a.setAttribute('download', 'stockbee_terminal_backup_' + Date.now() + '.json');
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(json).then(() => alert('Backup downloaded and also copied to your clipboard. Paste it somewhere safe (Notes works).')).catch(() => {});
+            }
         }
 
         function importData() {
-            const jsonStr = prompt("Paste your backup JSON data here:");
+            const jsonStr = prompt('Paste your backup JSON data here:');
             if (!jsonStr) return;
             try {
-                const parsed = JSON.parse(jsonStr);
-                appState = parsed;
+                appState = normalizeState(JSON.parse(jsonStr));
                 saveState();
-                init();
-                alert("Data successfully restored!");
-            } catch(e) {
-                alert("Invalid JSON format.");
+                init(true);
+                alert('Data successfully restored!');
+            } catch (e) {
+                alert('Invalid JSON format.');
             }
         }
 
         function clearHistory() {
-            if (confirm("Are you sure you want to clear all trade history? This cannot be undone.")) {
-                appState.history = [];
-                saveState();
-                renderHistory();
-            }
+            const answer = prompt('This permanently deletes all trade history and loss-limit records. Type CLEAR to confirm:');
+            if (answer !== 'CLEAR') return;
+            appState.history = [];
+            saveState();
+            refreshAll();
         }
 
-        window.addEventListener('DOMContentLoaded', init);
+        // ---------- boot ----------
+        function refreshAll() {
+            applyConfig();
+            updateHUD();
+            renderBreadthResult();
+            renderDirective();
+            calculateSize();
+            renderHistory();
+            renderScorecard();
+        }
+
+        function init(fromRestore) {
+            if (!fromRestore) {
+                let saved = null;
+                try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { console.error('Failed to parse saved state', e); }
+                appState = normalizeState(saved);
+            }
+            applyConfig();
+            restoreInputs();
+            if (!(appState.peak > 0)) appState.peak = appState.equity;
+            if (appState.peak < appState.equity) appState.peak = appState.equity;
+            $('sizerEquity').value = appState.equity;
+            $('peakEquity').value = appState.peak;
+            // 2x conviction is re-earned every session
+            $('sizerConviction').value = '1x';
+            ['cat1', 'cat2', 'cat3'].forEach(id => { $(id).checked = false; });
+            saveState();
+            refreshAll();
+        }
+
+        window.addEventListener('DOMContentLoaded', function () { init(false); });
     </script>
 </body>
 </html>
