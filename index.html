@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Process Terminal">
-    <title>Stockbee Process Terminal v3.12</title>
+    <title>Stockbee Process Terminal v3.13</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -114,7 +114,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.12</span>
+            <span class="badge">PROCESS TERMINAL v3.13</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -1064,6 +1064,7 @@
         window.addEventListener('DOMContentLoaded', function () {
             (async function () {
                 try { if (cloudToken() && cloudGistId()) await cloudPull(); } catch (e) {}
+                try { await fetchScanDigest(); } catch (e) {}
                 cloudReady = true;
                 if (cloudToken() && cloudGistId()) cloudStatus('Cloud sync on — data shared across devices.');
             })();
@@ -1623,6 +1624,78 @@
             return { p: p, tone: tone, icon: icon, desc: desc, mkt: mkt };
         }
 
+        // ---------- scan digest (published by the scan routines to the gist) ----------
+        let scanDigest = null;
+        const SCAN_DIGEST_FILE = 'scan-digest.json';
+        function starStr(n) {
+            n = Math.max(0, Math.min(5, Math.round(n || 0)));
+            return '★'.repeat(n) + '☆'.repeat(5 - n);
+        }
+        async function fetchScanDigest() {
+            try {
+                const gid = (typeof cloudGistId === 'function') ? cloudGistId() : null;
+                if (!gid) return;
+                const g = await fetch('https://api.github.com/gists/' + gid);
+                if (!g.ok) return;
+                const gj = await g.json();
+                const f = gj.files && gj.files[SCAN_DIGEST_FILE];
+                if (!f || !f.raw_url) return;
+                const r = await fetch(f.raw_url);
+                if (!r.ok) return;
+                scanDigest = await r.json();
+                if (typeof renderRails === 'function') renderRails();
+            } catch (e) { /* digest is informational only; never break the terminal */ }
+        }
+        function bucketTag(b) {
+            const c = b === 'TAKE' ? 'var(--accent-green)' : (b === 'MONITOR' ? 'var(--accent-yellow)' : 'var(--text-secondary)');
+            return '<span class="small" style="color:' + c + ';">' + esc(b || '') + '</span>';
+        }
+        function digestScansCard() {
+            const head = '<div class="card-title">Today\'s Scans <span class="small" style="color: var(--text-secondary); font-weight: normal;">' +
+                (scanDigest && scanDigest.date ? esc(scanDigest.date) : '') +
+                ' <a href="#" onclick="fetchScanDigest(); return false;" style="color: var(--accent-blue);" title="Refresh scan digest">&#8635;</a></span></div>';
+            if (!scanDigest || !scanDigest.scans || !Object.keys(scanDigest.scans).length) {
+                return '<div class="card">' + head + '<div class="small" style="color: var(--text-secondary);">No scan digest yet — it publishes after the next scan run.</div></div>';
+            }
+            const order = ['morning', 'midday', 'reversal', 'bounce'];
+            let body = '';
+            order.forEach(function (k) {
+                const s = scanDigest.scans[k];
+                if (!s) return;
+                const items = (s.items || []).map(function (i) {
+                    return '<strong>' + esc(i.ticker) + '</strong> ' + starStr(i.stars) + ' ' + bucketTag(i.bucket);
+                }).join(', ');
+                body += '<div class="small" style="margin-bottom: 8px; line-height: 1.7;"><strong>' + esc(s.label || k) + '</strong>' +
+                    (s.time ? ' <span style="color: var(--text-secondary);">· ' + esc(s.time) + '</span>' : '') + '<br>' +
+                    (items || '<span style="color: var(--text-secondary);">no qualifiers</span>') + '</div>';
+            });
+            if (scanDigest.posture) body += '<div class="small" style="color: var(--text-secondary);">Posture: ' + esc(scanDigest.posture) + '</div>';
+            return '<div class="card">' + head + body + '</div>';
+        }
+        function digestFocusCard() {
+            const head = '<div class="card-title">Focus List <span class="small" style="color: var(--text-secondary); font-weight: normal;">&#9733;&#9733;&#9733;&#9733;&#9733; + permission</span></div>';
+            if (!scanDigest || !scanDigest.focus || !scanDigest.focus.length) {
+                return '<div class="card">' + head + '<div class="small" style="color: var(--text-secondary);">Empty — no 5-star permission setups today.</div></div>';
+            }
+            const cards = scanDigest.focus.map(function (f) {
+                const tiers = f.tiers ? Object.keys(f.tiers).map(function (k) {
+                    return '$' + k + ': ' + (f.tiers[k] == null ? '—' : f.tiers[k] + ' sh');
+                }).join(' · ') : '';
+                return '<div class="metric-box" style="text-align: left; margin-bottom: 8px; padding: 10px;">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;"><strong>' + esc(f.ticker) + '</strong>' +
+                    '<span class="small" style="color: var(--accent-yellow);">' + starStr(f.stars) + '</span></div>' +
+                    '<div class="small" style="color: var(--text-secondary);">' + esc(f.setup || '') + '</div>' +
+                    (f.thesis ? '<div class="small" style="margin-top: 4px;">' + esc(f.thesis) + '</div>' : '') +
+                    (f.trigger ? '<div class="small" style="color: var(--text-secondary);">Trigger: ' + esc(f.trigger) + '</div>' : '') +
+                    ((f.entry != null && f.stop != null) ? '<div class="small">Entry $' + Number(f.entry).toFixed(2) + ' · Stop $' + Number(f.stop).toFixed(2) + ' · Risk $' + Number(f.risk).toFixed(2) + '/sh' + (f.t1 != null ? ' · T1 $' + Number(f.t1).toFixed(2) : '') + '</div>' : '') +
+                    (tiers ? '<div class="small" style="color: var(--text-secondary);">' + esc(tiers) + '</div>' : '') +
+                    (f.hold ? '<div class="small" style="color: var(--text-secondary);">' + esc(f.hold) + '</div>' : '') +
+                    (f.study_note ? '<div class="small" style="font-style: italic; margin-top: 4px;">' + esc(f.study_note) + '</div>' : '') +
+                    '</div>';
+            }).join('');
+            return '<div class="card">' + head + cards + '</div>';
+        }
+
         function renderRails() {
             const L = $('railLeft'), R = $('railRight');
             if (!L || !R) return;
@@ -1642,7 +1715,7 @@
                 '<div class="card">' +
                 '<div class="card-title">Selling Into Strength</div>' +
                 '<div class="small" style="line-height: 1.8;"><strong>T1:</strong> +1R → sell 1/3, stop to breakeven.<br><strong>T2:</strong> day 3–5 strength → sell half of rest.<br><strong>Runner:</strong> trail 10 EMA or prior-day low.</div>' +
-                '</div>';
+                '</div>' + digestScansCard();
             // ---- right rail: session + open positions + trigger plans ----
             const opens = appState.history.filter(t => t.status === 'OPEN');
             const posHtml = opens.length ? opens.map(t => {
@@ -1683,7 +1756,7 @@
                 '</div>' +
                 '<div class="card">' +
                 '<div class="card-title">Trigger Plans</div>' + plansHtml +
-                '</div>';
+                '</div>' + digestFocusCard();
         }
 
         // ---------- locks & risk ----------
