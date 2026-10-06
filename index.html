@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Process Terminal">
-    <title>Stockbee Process Terminal v3.5</title>
+    <title>Stockbee Process Terminal v3.12</title>
     <style>
         :root {
             --bg-dark: #0b0f19;
@@ -21,7 +21,16 @@
             --accent-purple: #8b5cf6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-dark); color: var(--text-primary); padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); max-width: 800px; margin: 0 auto; line-height: 1.5; }
+        body { background-color: var(--bg-dark); color: var(--text-primary); padding: 16px; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); line-height: 1.5; }
+        /* Desktop side rails: single centered column below 1280px (mobile unchanged),
+           3-column grid with sticky rails on wide screens. */
+        .layout { display: grid; grid-template-columns: minmax(0, 800px); justify-content: center; gap: 16px; align-items: start; margin: 0 auto; }
+        .main-col { min-width: 0; }
+        .rail { display: none; min-width: 0; }
+        @media (min-width: 1280px) {
+            .layout { grid-template-columns: 280px minmax(0, 800px) 320px; max-width: 1520px; }
+            .rail { display: block; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+        }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
         .title { font-size: 1.15rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; }
         .badge { background: #1e3a8a; color: #93c5fd; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; }
@@ -99,10 +108,13 @@
 </head>
 <body>
 
+    <div class="layout">
+        <aside class="rail rail-left" id="railLeft" aria-label="Posture and playbook"></aside>
+        <main class="main-col">
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.11</span>
+            <span class="badge">PROCESS TERMINAL v3.12</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -1600,6 +1612,80 @@
                 '<div class="small" style="color: var(--text-secondary);">Do not trust a row until it has roughly 30 closed trades. If FOCUS does not beat the others over that sample, change the directive, not your sizing.</div>';
         }
 
+        // ---------- side rails (desktop >=1280px; hidden on mobile) ----------
+        function railPosture() {
+            const p = effectivePosture();
+            const tone = p === 'YES' ? 'green' : (p === 'SELECTIVE' ? 'yellow' : 'red');
+            const icon = p === 'YES' ? '🟢' : (p === 'SELECTIVE' ? '🟡' : '🔴');
+            const desc = p === 'YES' ? 'Take breakouts, size up.' : (p === 'SELECTIVE' ? 'Best setups only, half size.' : 'Stand aside. Zero new risk.');
+            const b = appState.breadth;
+            const mkt = (b && breadthFresh()) ? b.posture : ('stale — capped ' + CONFIG.stalePostureCeiling);
+            return { p: p, tone: tone, icon: icon, desc: desc, mkt: mkt };
+        }
+
+        function renderRails() {
+            const L = $('railLeft'), R = $('railRight');
+            if (!L || !R) return;
+            // ---- left rail: posture + gates + strength rules ----
+            const rp = railPosture();
+            L.innerHTML =
+                '<div class="card">' +
+                '<div class="card-title">Today\'s Posture</div>' +
+                '<div class="alert-banner tone-' + rp.tone + '" style="margin-bottom: 8px;">' + rp.icon + ' ' + esc(rp.p) + ' — ' + esc(rp.desc) + '</div>' +
+                '<div class="small" style="color: var(--text-secondary);">My ceiling: ' + esc(appState.posture) + ' · Market: ' + esc(rp.mkt) + '</div>' +
+                '</div>' +
+                '<div class="card">' +
+                '<div class="card-title">The Three Gates</div>' +
+                '<div class="small" style="line-height: 1.8;">1. <strong>Stars rate quality</strong> — ★★★★+ bar for EPs.<br>2. <strong>Posture grants permission</strong> — 🔴 No = paper only.<br>3. <strong>Trigger authorizes entry</strong> — no staged trigger, no trade.</div>' +
+                '<div class="small" style="color: var(--text-secondary); font-style: italic; margin-top: 8px;">"A move that happens without my trigger was never my trade."</div>' +
+                '</div>' +
+                '<div class="card">' +
+                '<div class="card-title">Selling Into Strength</div>' +
+                '<div class="small" style="line-height: 1.8;"><strong>T1:</strong> +1R → sell 1/3, stop to breakeven.<br><strong>T2:</strong> day 3–5 strength → sell half of rest.<br><strong>Runner:</strong> trail 10 EMA or prior-day low.</div>' +
+                '</div>';
+            // ---- right rail: session + open positions + trigger plans ----
+            const opens = appState.history.filter(t => t.status === 'OPEN');
+            const posHtml = opens.length ? opens.map(t => {
+                const banked = (t.trims || []).reduce((a, x) => a + (x.pnl || 0), 0);
+                const riskStop = Math.max(0, t.direction * (t.entry - t.stop)) * t.shares;
+                const bankedTxt = (t.trims && t.trims.length) ? ' · <span style="color:' + (banked >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + ';">' + money(banked) + ' banked</span>' : '';
+                return '<div class="metric-box" style="text-align: left; margin-bottom: 8px; padding: 10px;">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;"><strong>' + esc(t.ticker) + '</strong>' +
+                    '<span class="small" style="color: var(--text-secondary);">' + t.shares + ' / ' + (t.initialShares || t.shares) + ' sh</span></div>' +
+                    '<div class="small" style="color: var(--text-secondary);">Entry $' + t.entry.toFixed(2) + ' · Stop $' + t.stop.toFixed(2) + bankedTxt + '</div>' +
+                    '<div class="small" style="color: var(--text-secondary);">Risk at stop: ' + money(riskStop) + '</div>' +
+                    '<div style="display: flex; gap: 6px; margin-top: 8px;">' +
+                    '<button class="btn-close-trade" onclick="trimTrade(' + t.id + ')">Trim</button>' +
+                    '<button class="btn-close-trade" onclick="moveStop(' + t.id + ')">Stop</button>' +
+                    '<button class="btn-close-trade" onclick="closeTrade(' + t.id + ')">Close</button>' +
+                    '</div></div>';
+            }).join('') : '<div class="small" style="color: var(--text-secondary);">Flat — all cash.</div>';
+            const plansHtml = appState.plans.length ? appState.plans.map(pln => {
+                const key = KEY_BY_SETUP[pln.setup];
+                const fit = getSetupFit(pln.setup).fit;
+                const fitColor = fit === 'FOCUS' ? 'var(--accent-green)' : (fit === 'AVOID' ? 'var(--accent-red)' : 'var(--accent-yellow)');
+                return '<div class="metric-box" style="text-align: left; margin-bottom: 8px; padding: 10px;">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;"><strong>' + esc(pln.ticker) + '</strong>' +
+                    '<span class="small" style="color:' + fitColor + ';">' + fit + '</span></div>' +
+                    '<div class="small" style="color: var(--text-secondary);">' + esc(SETUPS[key]) + ' ~$' + Number(pln.entry).toFixed(2) + '</div></div>';
+            }).join('') : '<div class="small" style="color: var(--text-secondary);">No trigger plans.</div>';
+            R.innerHTML =
+                '<div class="card">' +
+                '<div class="card-title">Session</div>' +
+                '<div class="grid-2">' +
+                '<div class="metric-box"><div class="metric-label">Today</div><div class="metric-val" style="font-size: 1rem;">' + money(pnlToday()) + '</div></div>' +
+                '<div class="metric-box"><div class="metric-label">Week</div><div class="metric-val" style="font-size: 1rem;">' + money(pnlWeek()) + '</div></div>' +
+                '</div>' +
+                '<div class="small" style="color: var(--text-secondary); margin-top: 8px;">Open: ' + opens.length + ' / ' + CONFIG.limits.maxOpenPositions + '</div>' +
+                '</div>' +
+                '<div class="card">' +
+                '<div class="card-title">Open Positions</div>' + posHtml +
+                '</div>' +
+                '<div class="card">' +
+                '<div class="card-title">Trigger Plans</div>' + plansHtml +
+                '</div>';
+        }
+
         // ---------- locks & risk ----------
         function isTilt() { return TILT_STATES.indexOf(val('tradeMood')) >= 0; }
 
@@ -2438,6 +2524,7 @@
             calculateSize();
             renderHistory();
             renderScorecard();
+            renderRails();
         }
 
         function init(fromRestore) {
@@ -2462,5 +2549,8 @@
 
         window.addEventListener('DOMContentLoaded', function () { init(false); });
     </script>
+        </main>
+        <aside class="rail rail-right" id="railRight" aria-label="Positions and plans"></aside>
+    </div>
 </body>
 </html>
