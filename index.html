@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.10</span>
+            <span class="badge">PROCESS TERMINAL v3.11</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -616,8 +616,8 @@
             defenseFocusOnly: true,      // in drawdown defense, NEUTRAL setups are treated as AVOID
             breadthFreshHours: 20,       // a Market Monitor evaluation is trusted for this long
             stalePostureCeiling: 'SELECTIVE',   // posture cap if the Market Monitor row is stale or missing
-            extremeOversoldT2108: 10,
-            extremeOversoldPosture: 'SELECTIVE' // playbook calls T2108 < 10 a bullish special case; capped at half size by default
+            extremeOversoldT2108: 20,
+            extremeOversoldPosture: 'SELECTIVE' // washed-out breadth (T2108 < 20) is a bounce-watch special case; capped at half size by default
         };
 
         const STORAGE_KEY = 'stockbee_terminal_state';
@@ -747,7 +747,7 @@
                 extras: ['Cash is a position. Doing nothing here is the edge.', 'Use the time: build the DEP Candidates watchlist from recent EP9M hits, review your journal, and study 20% and 50% movers.']
             },
             OVERSOLD: {
-                label: 'EXTREME OVERSOLD: BOUNCE WATCH (T2108 < 10)', tone: 'blue',
+                label: 'EXTREME OVERSOLD: BOUNCE WATCH (T2108 < 20)', tone: 'blue',
                 blurb: 'Playbook special case: capitulation lows are where bounces start. Capped at half size.',
                 focus: [
                     ['BB', 'Bullish engulfing off the low on institutional-quality names.'],
