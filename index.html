@@ -102,7 +102,7 @@
     <div class="header">
         <div class="title">
             <span>STOCKBEE</span>
-            <span class="badge">PROCESS TERMINAL v3.9</span>
+            <span class="badge">PROCESS TERMINAL v3.10</span>
         </div>
         <div style="display: flex; gap: 6px;">
             <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-bottom: 0;" onclick="toggleSettings(true)">Settings</button>
@@ -1215,9 +1215,9 @@
             if (t < CONFIG.extremeOversoldT2108) {
                 posture = CONFIG.extremeOversoldPosture; regime = 'OVERSOLD';
                 reasons.push('T2108 under ' + CONFIG.extremeOversoldT2108 + ': extreme-oversold special case, capped at ' + posture);
-            } else if (bothBelow && rawBear && trend !== 'rising') {
+            } else if (bothBelow) {
                 posture = 'NO'; regime = 'NO';
-                reasons.push('All fast and slow measures agree bearish: breakouts fail, stand aside');
+                reasons.push('Both ratios below 1.0 (bearish agreement): breakouts fail, stand aside. A bullish raw count or a low-level T2108 bounce does not override slow-measure agreement');
             } else if (bothAbove && rawBull && (trend === 'rising' || t >= 50)) {
                 posture = 'YES'; regime = 'HOT';
                 reasons.push('Ratios, raw count and T2108 agree bullish: breakouts work');
