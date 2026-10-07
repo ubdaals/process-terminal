@@ -1689,6 +1689,7 @@
                     (f.trigger ? '<div class="small" style="color: var(--text-secondary);">Trigger: ' + esc(f.trigger) + '</div>' : '') +
                     ((f.entry != null && f.stop != null) ? '<div class="small">Entry $' + Number(f.entry).toFixed(2) + ' · Stop $' + Number(f.stop).toFixed(2) + ' · Risk $' + Number(f.risk).toFixed(2) + '/sh' + (f.t1 != null ? ' · T1 $' + Number(f.t1).toFixed(2) : '') + '</div>' : '') +
                     (tiers ? '<div class="small" style="color: var(--text-secondary);">' + esc(tiers) + '</div>' : '') +
+                    (f.lev2x ? '<div class="small" style="color: var(--accent-yellow); margin-top: 4px;">2x: ' + esc(f.lev2x) + '</div>' : '') +
                     (f.hold ? '<div class="small" style="color: var(--text-secondary);">' + esc(f.hold) + '</div>' : '') +
                     (f.study_note ? '<div class="small" style="font-style: italic; margin-top: 4px;">' + esc(f.study_note) + '</div>' : '') +
                     '</div>';
