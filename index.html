@@ -1056,10 +1056,31 @@
         }
         function scheduleCloudPush() {
             if (!cloudReady || !cloudToken() || !cloudGistId()) return;
-            if (Date.now() - lastCloudPull < 10000) return; // never stomp a fresh pull
             clearTimeout(pushTimer);
-            pushTimer = setTimeout(() => cloudPush(true), 4000);
+            // Don't race a fresh pull — but never DROP the push. Delay past the
+            // 10s guard instead, so a removal is never lost to a later refresh.
+            const sincePull = Date.now() - lastCloudPull;
+            const delay = sincePull < 10000 ? (10000 - sincePull + 1000) : 4000;
+            pushTimer = setTimeout(() => cloudPush(true), delay);
         }
+        // If the page is torn down with a push still pending (e.g. user removed
+        // a plan and refreshed within the debounce window), flush it with a
+        // keepalive fetch so the cloud copy can't resurrect the old state.
+        // 'pagehide' is the reliable unload event on iOS Safari too.
+        window.addEventListener('pagehide', function () {
+            if (!pushTimer) return;
+            clearTimeout(pushTimer);
+            pushTimer = null;
+            const tok = cloudToken(), gid = cloudGistId();
+            if (!tok || !gid) return;
+            try {
+                fetch('https://api.github.com/gists/' + gid, {
+                    method: 'PATCH', headers: cloudHeaders(),
+                    body: JSON.stringify({ files: { [CLOUD_FILE]: { content: JSON.stringify(appState) } } }),
+                    keepalive: true
+                });
+            } catch (e) { /* unload path: nothing else to do */ }
+        });
         // Auto-pull on startup (registered before the page's own init listener).
         window.addEventListener('DOMContentLoaded', function () {
             (async function () {
