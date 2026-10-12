@@ -1678,7 +1678,7 @@
             if (!scanDigest || !scanDigest.scans || !Object.keys(scanDigest.scans).length) {
                 return '<div class="card">' + head + '<div class="small" style="color: var(--text-secondary);">No scan digest yet — it publishes after the next scan run.</div></div>';
             }
-            const order = ['morning', 'midday', 'reversal', 'bounce'];
+            const order = ['morning', 'midday', 'reversal', 'bounce', 'shorts'];
             let body = '';
             order.forEach(function (k) {
                 const s = scanDigest.scans[k];
